@@ -2,4 +2,7 @@ module github.com/infinit-lab/puppy
 
 go 1.14
 
-require github.com/infinit-lab/yolanda v1.1.0
+require (
+	github.com/infinit-lab/yolanda v1.1.2
+	github.com/satori/go.uuid v1.2.0
+)
