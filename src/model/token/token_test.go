@@ -31,7 +31,7 @@ func TestNotification(t *testing.T) {
 
 func TestCreateToken(t *testing.T) {
 	var err error
-	token, err = CreateToken("admin", 30, "127.0.0.1")
+	token, err = CreateToken("admin", 30, "127.0.0.1", nil)
 	if err != nil {
 		t.Error("Failed to CreateToken. error: ", err)
 	}
@@ -81,7 +81,7 @@ func TestGetTokenList(t *testing.T) {
 }
 
 func TestDeleteToken(t *testing.T) {
-	err := DeleteToken(token)
+	err := DeleteToken(token, nil)
 	if err != nil {
 		t.Error("Failed to DeleteToken. error: ", err)
 	}

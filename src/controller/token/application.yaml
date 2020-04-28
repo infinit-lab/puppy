@@ -1,0 +1,4 @@
+log:
+  level: 3
+token:
+  checkDuration: 3

@@ -69,7 +69,7 @@ func currentDateTime() string {
 	return time.Now().Format("2006-01-02 15:04:05")
 }
 
-func CreateToken(username string, duration int, ip string) (string, error) {
+func CreateToken(username string, duration int, ip string, context interface{}) (string, error) {
 	token := strings.ReplaceAll(uuid.NewV4().String(), "-", "")
 	_, err := base.Sqlite.Exec("INSERT INTO `token` (`token`, `username`, `ip`, `duration`, `time`) VALUES (?, ?, ?, ?, ?)",
 		token, username, ip, duration, currentDateTime())
@@ -78,7 +78,7 @@ func CreateToken(username string, duration int, ip string) (string, error) {
 		return "", err
 	}
 	t, _ := GetToken(token)
-	_ = bus.PublishResource(base.KeyToken, base.StatusCreated, token, t, nil)
+	_ = bus.PublishResource(base.KeyToken, base.StatusCreated, token, t, context)
 	return token, nil
 }
 
@@ -93,7 +93,8 @@ func RenewToken(token string) error {
 	return err
 }
 
-func DeleteToken(token string) error {
+func DeleteToken(token string, context interface{}) error {
+	logutils.Trace("Delete token ", token)
 	t, err := GetToken(token)
 	if err != nil {
 		return err
@@ -103,7 +104,7 @@ func DeleteToken(token string) error {
 		return err
 	}
 	c.Erase(token)
-	_ = bus.PublishResource(base.KeyToken, base.StatusDeleted, token, t, nil)
+	_ = bus.PublishResource(base.KeyToken, base.StatusDeleted, token, t, context)
 	return err
 }
 
@@ -153,6 +154,8 @@ func GetTokenList() ([]*Token, error) {
 		if err != nil {
 			return nil, err
 		}
+		t.Time = strings.Replace(t.Time, "T", " ", 1)
+		t.Time = strings.Replace(t.Time, "Z", "", 1)
 		tokenList = append(tokenList, t)
 	}
 	return tokenList, err

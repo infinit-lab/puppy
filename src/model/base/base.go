@@ -26,7 +26,9 @@ func init() {
 }
 
 const (
-	KeyToken int = 1
+	KeyAll      int = 0
+	KeyToken    int = 1
+	KeyPassword int = 2
 )
 
 const (

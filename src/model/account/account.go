@@ -1,7 +1,9 @@
 package account
+
 import (
 	"errors"
 	"github.com/infinit-lab/puppy/src/model/base"
+	"github.com/infinit-lab/yolanda/bus"
 	"github.com/infinit-lab/yolanda/logutils"
 	"github.com/infinit-lab/yolanda/sqlite"
 	"os"
@@ -54,7 +56,8 @@ func initializeAccount() error {
 }
 
 func IsValidAccount(username string, password string) (bool, error) {
-	rows, err := base.Sqlite.Query("SELECT `username` FROM `account` WHERE `username` = ? AND `password` = ?", username, password)
+	rows, err := base.Sqlite.Query("SELECT `username` FROM `account` WHERE `username` = ? AND `password` = ?",
+		username, password)
 	if err != nil {
 		return false, err
 	}
@@ -68,8 +71,9 @@ func IsValidAccount(username string, password string) (bool, error) {
 	return true, nil
 }
 
-func ChangePassword(username string, originPassword string, newPassword string) error {
-	ret, err := base.Sqlite.Exec("UPDATE `account` SET `password` = ? WHERE `username` = ? AND `password` = ?", newPassword, username, originPassword)
+func ChangePassword(username string, originPassword string, newPassword string, context interface{}) error {
+	ret, err := base.Sqlite.Exec("UPDATE `account` SET `password` = ? WHERE `username` = ? AND `password` = ?",
+		newPassword, username, originPassword)
 	if err == nil {
 		rows, err := ret.RowsAffected()
 		if err != nil {
@@ -79,6 +83,7 @@ func ChangePassword(username string, originPassword string, newPassword string) 
 			return errors.New("用户名或密码错误")
 		}
 	}
+	_ = bus.PublishResource(base.KeyPassword, base.StatusUpdated, username, nil, context)
 	return err
 }
 

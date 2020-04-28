@@ -29,11 +29,11 @@ func TestIsValidAccount(t *testing.T) {
 }
 
 func TestChangePassword(t *testing.T) {
-	err := ChangePassword("admin", "21232f297a57a5a7", "admin")
+	err := ChangePassword("admin", "21232f297a57a5a7", "admin", nil)
 	if err == nil {
 		t.Error("ChangePassword should no be success")
 	}
-	err = ChangePassword("admin", "21232f297a57a5a743894a0e4a801fc3", "admin")
+	err = ChangePassword("admin", "21232f297a57a5a743894a0e4a801fc3", "admin", nil)
 	if err != nil {
 		t.Error("Failed to ChangePassword. error: ", err)
 	}
@@ -44,7 +44,7 @@ func TestChangePassword(t *testing.T) {
 	if isValid == false {
 		t.Error("Should be valid account")
 	}
-	err = ChangePassword("admin", "admin", "21232f297a57a5a743894a0e4a801fc3")
+	err = ChangePassword("admin", "admin", "21232f297a57a5a743894a0e4a801fc3", nil)
 	if err != nil {
 		t.Error("Failed to ChangePassword. error: ", err)
 	}
