@@ -3,6 +3,7 @@ package notification
 import (
 	"encoding/json"
 	"github.com/infinit-lab/puppy/src/model/base"
+	"github.com/infinit-lab/puppy/src/model/token"
 	"github.com/infinit-lab/yolanda/bus"
 	"github.com/infinit-lab/yolanda/httpserver"
 	"github.com/infinit-lab/yolanda/logutils"
@@ -16,7 +17,7 @@ func init() {
 	n := new(notification)
 	n.nodes = make(map[int]*node)
 	bus.Subscribe(base.KeyAll, n)
-	httpserver.RegisterWebsocketHandler("/ws/1/notification", n, true)
+	httpserver.RegisterWebsocketHandler("/ws/1/notification", n, false)
 }
 
 type node struct {
@@ -30,16 +31,29 @@ type notification struct {
 }
 
 func (n *notification) Handle(key int, value *bus.Resource) {
+	var nodeIdList []int
 	switch key {
 	case base.KeyToken:
 		switch value.Status {
 		case base.StatusCreated, base.StatusUpdated:
 			return
+		case base.StatusDeleted:
+			n.mutex.Lock()
+			for k, v := range n.nodes {
+				if v.token == value.Id {
+					nodeIdList = append(nodeIdList, k)
+				}
+			}
+			n.mutex.Unlock()
 		}
 	case base.KeyPassword:
 		return
 	}
 	n.notify(key, value)
+
+	for _, nodeId := range nodeIdList {
+		_ = httpserver.WebsocketClose(nodeId)
+	}
 }
 
 func (n *notification) NewConnection(nodeId int, r *http.Request) {
@@ -53,6 +67,21 @@ func (n *notification) NewConnection(nodeId int, r *http.Request) {
 		_ = httpserver.WebsocketClose(nodeId)
 		return
 	}
+
+	_, err = token.GetToken(tokens[0])
+	if err != nil {
+		var body notificationBody
+		body.Key = base.KeyToken
+		body.Id = tokens[0]
+		body.Status = base.StatusDeleted
+		data, err := json.Marshal(body)
+		if err == nil {
+			_ = httpserver.WebsocketWriteMessage(nodeId, data)
+		}
+		_ = httpserver.WebsocketClose(nodeId)
+		return
+	}
+
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
