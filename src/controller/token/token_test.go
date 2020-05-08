@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"github.com/infinit-lab/puppy/src/model/token"
+	"github.com/infinit-lab/taiji/src/model/token"
 	"github.com/infinit-lab/yolanda/config"
 	"github.com/infinit-lab/yolanda/httpserver"
 	"github.com/infinit-lab/yolanda/utils"

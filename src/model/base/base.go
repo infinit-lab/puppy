@@ -14,7 +14,7 @@ func init() {
 	file := config.GetString("sqlite.file")
 	logutils.Trace("Get sqlite file is ", file)
 	if file == "" {
-		file = "./puppy.db"
+		file = "./taiji.db"
 		logutils.Warning("Reset sqlite file to ", file)
 	}
 	var err error
@@ -26,9 +26,14 @@ func init() {
 }
 
 const (
-	KeyAll      int = 0
-	KeyToken    int = 1
-	KeyPassword int = 2
+	KeyAll           int = 0
+	KeyToken         int = 1
+	KeyPassword      int = 2
+	KeyCpuUseRate    int = 3
+	KeyMemUseRate    int = 4
+	KeyProcess       int = 5
+	KeyProcessEnable int = 6
+	KeyProcessStatus int = 7
 )
 
 const (
@@ -36,3 +41,9 @@ const (
 	StatusUpdated int = 2
 	StatusDeleted int = 3
 )
+
+type MemUsage struct {
+	Rate  uint32 `json:"rate"`
+	Total uint64 `json:"total"`
+	Avail uint64 `json:"avail"`
+}

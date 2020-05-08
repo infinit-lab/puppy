@@ -1,4 +1,4 @@
-module github.com/infinit-lab/puppy
+module github.com/infinit-lab/taiji
 
 go 1.14
 

@@ -2,7 +2,7 @@ package token
 
 import (
 	"errors"
-	"github.com/infinit-lab/puppy/src/model/token"
+	"github.com/infinit-lab/taiji/src/model/token"
 	"net/http"
 	"net/url"
 )

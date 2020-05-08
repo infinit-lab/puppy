@@ -1,7 +1,7 @@
 package account
 
 import (
-	"github.com/infinit-lab/puppy/src/model/account"
+	"github.com/infinit-lab/taiji/src/model/account"
 	"github.com/infinit-lab/yolanda/httpserver"
 	"github.com/infinit-lab/yolanda/logutils"
 	"net/http"

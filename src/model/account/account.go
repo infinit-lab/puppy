@@ -2,7 +2,7 @@ package account
 
 import (
 	"errors"
-	"github.com/infinit-lab/puppy/src/model/base"
+	"github.com/infinit-lab/taiji/src/model/base"
 	"github.com/infinit-lab/yolanda/bus"
 	"github.com/infinit-lab/yolanda/logutils"
 	"github.com/infinit-lab/yolanda/sqlite"
@@ -82,6 +82,8 @@ func ChangePassword(username string, originPassword string, newPassword string, 
 		if rows == 0 {
 			return errors.New("用户名或密码错误")
 		}
+	} else {
+		return err
 	}
 	_ = bus.PublishResource(base.KeyPassword, base.StatusUpdated, username, nil, context)
 	return err
