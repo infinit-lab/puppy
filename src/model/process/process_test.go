@@ -26,7 +26,7 @@ func (h *processHandler) Handle(key int, value *bus.Resource) {
 				return
 			}
 			data, _ := json.Marshal(p)
-			logutils.Trace("Process is %s", string(data))
+			logutils.Trace("Process is ", string(data))
 			h.Id = p.Id
 		default:
 			return

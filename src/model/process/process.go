@@ -45,6 +45,11 @@ func init() {
 				Type:    "TINYINT",
 				Default: "1",
 			},
+			{
+				Name:    "pid",
+				Type:    "INTEGER",
+				Default: "0",
+			},
 		},
 	}
 	if err := base.Sqlite.InitializeTable(processTable); err != nil {
@@ -89,6 +94,7 @@ type Process struct {
 	Dir    string `json:"path"`
 	Config string `json:"config"`
 	Enable bool   `json:"enable"`
+	Pid    int    `json:"pid"`
 }
 
 type Status struct {
@@ -98,12 +104,12 @@ type Status struct {
 }
 
 const (
-	selectProcess = "SELECT `id`, `name`, `path`, `dir`, `config`, `enable` FROM `process` "
+	selectProcess = "SELECT `id`, `name`, `path`, `dir`, `config`, `enable`, `pid` FROM `process` "
 )
 
 func scanProcess(rows *sql.Rows) (*Process, error) {
 	p := new(Process)
-	if err := rows.Scan(&p.Id, &p.Name, &p.Path, &p.Dir, &p.Config, &p.Enable); err != nil {
+	if err := rows.Scan(&p.Id, &p.Name, &p.Path, &p.Dir, &p.Config, &p.Enable, &p.Pid); err != nil {
 		return nil, err
 	}
 	return p, nil
@@ -134,6 +140,10 @@ func GetProcess(id int) (*Process, error) {
 }
 
 func GetProcessList() ([]*Process, error) {
+	pList, ok := processCache.Get("list")
+	if ok {
+		return pList.([]*Process), nil
+	}
 	rows, err := base.Sqlite.Query(selectProcess)
 	if err != nil {
 		return nil, err
@@ -150,12 +160,13 @@ func GetProcessList() ([]*Process, error) {
 		}
 		processList = append(processList, p)
 	}
+	processCache.Insert("list", processList)
 	return processList, nil
 }
 
 func CreateProcess(p *Process, context interface{}) error {
-	ret, err := base.Sqlite.Exec("INSERT INTO `process` (`name`, `path`, `dir`, `config`, `enable`) "+
-		"VALUES (?, ?, ?, ?, ?)", p.Name, p.Path, p.Dir, p.Config, p.Enable)
+	ret, err := base.Sqlite.Exec("INSERT INTO `process` (`name`, `path`, `dir`, `config`, `enable`, `pid`) "+
+		"VALUES (?, ?, ?, ?, ?, ?)", p.Name, p.Path, p.Dir, p.Config, p.Enable, p.Pid)
 	var id int64
 	if err != nil {
 		return err
@@ -172,6 +183,7 @@ func CreateProcess(p *Process, context interface{}) error {
 			return err
 		}
 	}
+	processCache.Erase("list")
 	process, _ := GetProcess(int(id))
 	_ = bus.PublishResource(base.KeyProcess, base.StatusCreated, strconv.Itoa(int(id)), process, context)
 	return nil
@@ -179,11 +191,12 @@ func CreateProcess(p *Process, context interface{}) error {
 
 func UpdateProcess(id int, p *Process, context interface{}) error {
 	_, err := base.Sqlite.Exec("UPDATE `process` "+
-		"SET `name` = ?, `path` = ?, `dir` = ?, `config` = ?, `enable` = ? WHERE `id` = ?",
-		p.Name, p.Path, p.Dir, p.Config, p.Enable, id)
+		"SET `name` = ?, `path` = ?, `dir` = ?, `config` = ?, `enable` = ?, `pid` = ? WHERE `id` = ?",
+		p.Name, p.Path, p.Dir, p.Config, p.Enable, p.Pid, id)
 	if err != nil {
 		return nil
 	}
+	processCache.Erase("list")
 	processCache.Erase(strconv.Itoa(id))
 	process, _ := GetProcess(id)
 	_ = bus.PublishResource(base.KeyProcess, base.StatusCreated, strconv.Itoa(id), process, context)
@@ -199,6 +212,7 @@ func DeleteProcess(id int, context interface{}) error {
 	if err != nil {
 		return nil
 	}
+	processCache.Erase("list")
 	processCache.Erase(strconv.Itoa(id))
 	_ = bus.PublishResource(base.KeyProcess, base.StatusDeleted, strconv.Itoa(id), process, context)
 	return nil

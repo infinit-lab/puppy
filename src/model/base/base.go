@@ -34,6 +34,7 @@ const (
 	KeyProcess       int = 5
 	KeyProcessEnable int = 6
 	KeyProcessStatus int = 7
+	KeyStatistic     int = 8
 )
 
 const (
@@ -46,4 +47,23 @@ type MemUsage struct {
 	Rate  uint32 `json:"rate"`
 	Total uint64 `json:"total"`
 	Avail uint64 `json:"avail"`
+}
+
+const (
+	StatusTypeStarted string = "started" // 0: stopped, 1: started
+)
+
+const (
+	OperateStart   string = "start"
+	OperateStop    string = "stop"
+	OperateRestart string = "restart"
+	OperateEnable  string = "enable"
+	OperateDisable string = "disable"
+)
+
+type Statistic struct {
+	Total   int `json:"total"`
+	Running int `json:"running"`
+	Stopped int `json:"stopped"`
+	Disable int `json:"disable"`
 }

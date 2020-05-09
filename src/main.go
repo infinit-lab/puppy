@@ -6,8 +6,18 @@ import (
 	_ "github.com/infinit-lab/taiji/src/controller/performance"
 	_ "github.com/infinit-lab/taiji/src/controller/token"
 	"github.com/infinit-lab/yolanda/httpserver"
+	"github.com/infinit-lab/yolanda/logutils"
+	"os"
+	"os/signal"
 )
 
 func main() {
-	_ = httpserver.ListenAndServe()
+	go func() {
+		_ = httpserver.ListenAndServe()
+	}()
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt)
+	s := <- c
+	logutils.Trace("Got signal: ", s)
 }
