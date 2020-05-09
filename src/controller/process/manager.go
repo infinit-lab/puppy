@@ -213,6 +213,23 @@ func (m *manager) updateStatistic() error {
 	return nil
 }
 
+func (m *manager) quit() {
+	for _, data := range m.processList {
+		_ = m.stop(data)
+		for i := 0; i < 100; i++ {
+			time.Sleep(100 * time.Millisecond)
+			status, err := process.GetStatus(data.process.Id, base.StatusTypeStarted)
+			if err != nil {
+				logutils.Error("Failed to GetStatus. error: ", err)
+				break
+			}
+			if status.Value == "0" {
+				break
+			}
+		}
+	}
+}
+
 type processHandler struct {
 	m *manager
 }

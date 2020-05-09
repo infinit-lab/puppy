@@ -4,6 +4,7 @@ import (
 	"github.com/infinit-lab/taiji/src/model/base"
 	"github.com/infinit-lab/taiji/src/model/process"
 	"github.com/infinit-lab/yolanda/bus"
+	"github.com/infinit-lab/yolanda/config"
 	"github.com/infinit-lab/yolanda/httpserver"
 	"github.com/infinit-lab/yolanda/logutils"
 	"net/http"
@@ -12,23 +13,40 @@ import (
 
 var m *manager
 var ph *processHandler
+var g *guard
+var s *slave
 
 func init() {
-	m = new(manager)
-	m.run()
+	if config.GetBool("process.guard") {
+		s = new(slave)
+		s.run()
+	} else {
+		m = new(manager)
+		m.run()
 
-	ph = new(processHandler)
-	ph.m = m
-	bus.Subscribe(base.KeyProcess, ph)
-	bus.Subscribe(base.KeyProcessEnable, ph)
-	bus.Subscribe(base.KeyProcessStatus, ph)
+		ph = new(processHandler)
+		ph.m = m
+		bus.Subscribe(base.KeyProcess, ph)
+		bus.Subscribe(base.KeyProcessEnable, ph)
+		bus.Subscribe(base.KeyProcessStatus, ph)
 
-	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process", HandleGetProcessList1, true)
-	httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/process/+/operation", HandlePutProcessOperation1, true)
-	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+/status", HandleGetProcessStatusList1, true)
-	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+/status/+", HandleGetProcessStatus1, true)
-	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/status/+", HandleGetStatusList1, true)
-	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/statistic", HandleGetProcessStatistic1, true)
+		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process", HandleGetProcessList1, true)
+		httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/process/+/operation", HandlePutProcessOperation1, true)
+		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+/status", HandleGetProcessStatusList1, true)
+		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+/status/+", HandleGetProcessStatus1, true)
+		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/status/+", HandleGetStatusList1, true)
+		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/statistic", HandleGetProcessStatistic1, true)
+
+		g = new(guard)
+		g.run()
+	}
+}
+
+func Quit() {
+	bus.Unsubscribe(base.KeyProcess, ph)
+	bus.Unsubscribe(base.KeyProcessEnable, ph)
+	bus.Unsubscribe(base.KeyProcessStatus, ph)
+	m.quit()
 }
 
 type getProcessList1Response struct {
