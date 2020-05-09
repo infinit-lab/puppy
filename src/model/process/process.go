@@ -199,7 +199,7 @@ func UpdateProcess(id int, p *Process, context interface{}) error {
 	processCache.Erase("list")
 	processCache.Erase(strconv.Itoa(id))
 	process, _ := GetProcess(id)
-	_ = bus.PublishResource(base.KeyProcess, base.StatusCreated, strconv.Itoa(id), process, context)
+	_ = bus.PublishResource(base.KeyProcess, base.StatusUpdated, strconv.Itoa(id), process, context)
 	return nil
 }
 

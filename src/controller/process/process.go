@@ -5,6 +5,7 @@ import (
 	"github.com/infinit-lab/taiji/src/model/process"
 	"github.com/infinit-lab/yolanda/bus"
 	"github.com/infinit-lab/yolanda/httpserver"
+	"github.com/infinit-lab/yolanda/logutils"
 	"net/http"
 	"strconv"
 )
@@ -73,6 +74,7 @@ func HandlePutProcessOperation1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var response httpserver.ResponseBody
+	logutils.Trace("Operation is ", request.Operation)
 	switch request.Operation {
 	case base.OperateStart:
 		if p.process.Enable {
