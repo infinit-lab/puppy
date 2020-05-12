@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 )
 
 func init() {
@@ -78,6 +79,7 @@ func (n *notification) NewConnection(nodeId int, r *http.Request) {
 		if err == nil {
 			_ = httpserver.WebsocketWriteMessage(nodeId, data)
 		}
+		time.Sleep(10 * time.Millisecond)
 		_ = httpserver.WebsocketClose(nodeId)
 		return
 	}

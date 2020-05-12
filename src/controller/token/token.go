@@ -12,9 +12,12 @@ import (
 	"time"
 )
 
+var ps *passwordSubscriber;
+
 func init() {
 	logutils.Trace("Initializing controller token...")
-	bus.Subscribe(base.KeyToken, new(passwordSubscriber))
+	ps = new(passwordSubscriber)
+	bus.Subscribe(base.KeyPassword, ps)
 	httpserver.RegisterTokenChecker(new(tokenChecker))
 
 	httpserver.RegisterHttpHandlerFunc(http.MethodPost, "/api/1/token", HandlePostToken1, false)
@@ -101,7 +104,7 @@ func checkTokenLifetime() {
 		if err != nil {
 			continue
 		}
-		now := time.Now()
+		now := time.Now().UTC()
 		for _, t := range tokenList {
 			start, err := time.Parse("2006-01-02 15:04:05", t.Time)
 			if err != nil {

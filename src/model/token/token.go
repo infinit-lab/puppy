@@ -66,7 +66,7 @@ type Token struct {
 }
 
 func currentDateTime() string {
-	return time.Now().Format("2006-01-02 15:04:05")
+	return time.Now().UTC().Format("2006-01-02 15:04:05")
 }
 
 func CreateToken(username string, duration int, ip string, context interface{}) (string, error) {
