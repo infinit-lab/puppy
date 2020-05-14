@@ -27,7 +27,7 @@ func init() {
 		ph = new(processHandler)
 		ph.m = m
 		bus.Subscribe(base.KeyProcess, ph)
-		bus.Subscribe(base.KeyProcessEnable, ph)
+		//bus.Subscribe(base.KeyProcessEnable, ph)
 		bus.Subscribe(base.KeyProcessStatus, ph)
 
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process", HandleGetProcessList1, true)
@@ -45,7 +45,7 @@ func init() {
 
 func Quit() {
 	bus.Unsubscribe(base.KeyProcess, ph)
-	bus.Unsubscribe(base.KeyProcessEnable, ph)
+	//bus.Unsubscribe(base.KeyProcessEnable, ph)
 	bus.Unsubscribe(base.KeyProcessStatus, ph)
 	m.quit()
 }

@@ -87,12 +87,14 @@ func (n *notification) NewConnection(nodeId int, r *http.Request) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	for _, v := range n.nodes {
-		if v.token == tokens[0] {
-			_ = httpserver.WebsocketClose(nodeId)
-			return
+	/*
+		for _, v := range n.nodes {
+			if v.token == tokens[0] {
+				_ = httpserver.WebsocketClose(nodeId)
+				return
+			}
 		}
-	}
+	*/
 
 	tempNode := new(node)
 	tempNode.token = tokens[0]

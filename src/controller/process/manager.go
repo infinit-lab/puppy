@@ -66,6 +66,7 @@ func (m *manager) run() {
 		}
 		m.processList = append(m.processList, data)
 	}
+	_ = m.updateStatistic()
 }
 
 func updateProcessStatus(p *processData, started bool, pid int) {
@@ -236,7 +237,8 @@ type processHandler struct {
 }
 
 func (h *processHandler) Handle(key int, value *bus.Resource) {
-	if key == base.KeyProcess || key == base.KeyProcessEnable {
+	isEnableChanged := false
+	if key == base.KeyProcess {
 		if value.Status == base.StatusUpdated {
 			p, ok := value.Data.(*process.Process)
 			if !ok {
@@ -250,8 +252,11 @@ func (h *processHandler) Handle(key int, value *bus.Resource) {
 			if err != nil {
 				return
 			}
+			if p.Enable != data.process.Enable {
+				isEnableChanged = true
+			}
 			data.process = *p
-			if key == base.KeyProcessEnable {
+			if isEnableChanged {
 				if data.process.Enable {
 					_ = h.m.start(data)
 				} else {
@@ -261,7 +266,7 @@ func (h *processHandler) Handle(key int, value *bus.Resource) {
 		}
 	}
 
-	if key == base.KeyProcessEnable || key == base.KeyProcessStatus {
+	if isEnableChanged || key == base.KeyProcessStatus {
 		_ = h.m.updateStatistic()
 		statistic := new(base.Statistic)
 		*statistic = h.m.statistic

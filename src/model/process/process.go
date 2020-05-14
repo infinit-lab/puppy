@@ -229,9 +229,10 @@ func SetProcessEnable(id int, enable bool, context interface{}) error {
 	if err != nil {
 		return err
 	}
+	processCache.Erase("list")
 	processCache.Erase(strconv.Itoa(id))
 	process, _ := GetProcess(id)
-	_ = bus.PublishResource(base.KeyProcessEnable, base.StatusUpdated, strconv.Itoa(id), process, context)
+	_ = bus.PublishResource(base.KeyProcess, base.StatusUpdated, strconv.Itoa(id), process, context)
 	return nil
 }
 
