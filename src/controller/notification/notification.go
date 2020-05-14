@@ -87,15 +87,6 @@ func (n *notification) NewConnection(nodeId int, r *http.Request) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	/*
-		for _, v := range n.nodes {
-			if v.token == tokens[0] {
-				_ = httpserver.WebsocketClose(nodeId)
-				return
-			}
-		}
-	*/
-
 	tempNode := new(node)
 	tempNode.token = tokens[0]
 	tempNode.r = r
@@ -117,9 +108,10 @@ func (n *notification) ReadMessage(nodeId int, message []byte) {
 }
 
 type notificationBody struct {
-	Key    int    `json:"key"`
-	Status int    `json:"status"`
-	Id     string `json:"id"`
+	Key    int         `json:"key"`
+	Status int         `json:"status"`
+	Id     string      `json:"id"`
+	Data   interface{} `json:"data"`
 }
 
 func (n *notification) notify(key int, resource *bus.Resource) {
@@ -127,6 +119,7 @@ func (n *notification) notify(key int, resource *bus.Resource) {
 		Key:    key,
 		Status: resource.Status,
 		Id:     resource.Id,
+		Data:   resource.Data,
 	}
 
 	data, err := json.Marshal(body)

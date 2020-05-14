@@ -35,6 +35,7 @@ const (
 	//KeyProcessEnable int = 6
 	KeyProcessStatus int = 7
 	KeyStatistic     int = 8
+	KeyUpdate        int = 9
 )
 
 const (
@@ -60,6 +61,18 @@ const (
 	OperateEnable  string = "enable"
 	OperateDisable string = "disable"
 )
+
+const (
+	UpdateUpdating int = 1
+	UpdateSuccess int = 2
+	UpdateFail int = 3
+)
+
+type UpdateNotification struct {
+	Status int `json:"status"`
+	Current int `json:"current"`
+	Total int `json:"total"`
+}
 
 type Statistic struct {
 	Total   int `json:"total"`

@@ -199,3 +199,30 @@
   }
 }
 ```
+
+## PUT /api/1/process/{processId}/update-file/{fileId}
+
+更新进程
+
+### Header
+
+```json5
+{
+  "Authorization": "string", //Token
+  "Content-Type": "string", //application/x-zip-compressed
+  "File-Name": "string"
+}
+```
+
+### Request
+
+升级压缩包
+
+### Response
+
+```json5
+{
+  "result": "bool",
+  "error": "message"
+}
+```

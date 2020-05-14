@@ -2,6 +2,7 @@ package performance
 
 import (
 	"github.com/infinit-lab/taiji/src/model/base"
+	"github.com/infinit-lab/yolanda/bus"
 	"github.com/infinit-lab/yolanda/httpserver"
 	"github.com/infinit-lab/yolanda/logutils"
 	"github.com/infinit-lab/yolanda/utils"
@@ -22,7 +23,7 @@ func init() {
 				continue
 			}
 			cpuUseRate = rate
-			//_ = bus.PublishResource(base.KeyCpuUseRate, base.StatusUpdated, "", rate, nil)
+			_ = bus.PublishResource(base.KeyCpuUseRate, base.StatusUpdated, "", rate, nil)
 		}
 	}()
 
@@ -37,7 +38,7 @@ func init() {
 			memUseRate.Rate = rate
 			memUseRate.Total = total
 			memUseRate.Avail = avail
-			//_ = bus.PublishResource(base.KeyMemUseRate, base.StatusUpdated, "", usage, nil)
+			_ = bus.PublishResource(base.KeyMemUseRate, base.StatusUpdated, "", &memUseRate, nil)
 		}
 	}()
 

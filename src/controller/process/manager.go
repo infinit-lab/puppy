@@ -19,6 +19,7 @@ type processData struct {
 	process process.Process
 	cmd     *exec.Cmd
 	isStart bool
+	isRunning bool
 	mutex   sync.Mutex
 	reader  *bufio.Reader
 }
@@ -94,6 +95,7 @@ func (m *manager) start(p *processData) error {
 		return nil
 	}
 	p.isStart = true
+	p.isRunning = true
 	go func() {
 		for p.isStart {
 			time.Sleep(100 * time.Millisecond)
@@ -146,6 +148,7 @@ func (m *manager) start(p *processData) error {
 			p.cmd = nil
 			p.reader = nil
 		}
+		p.isRunning = false
 	}()
 	return nil
 }
@@ -158,7 +161,17 @@ func (m *manager) stop(p *processData) error {
 		return nil
 	}
 	p.isStart = false
-	return p.cmd.Process.Kill()
+	if err := p.cmd.Process.Kill(); err != nil {
+		logutils.Error("Failed to Kill. error: ", err)
+		return err
+	}
+	for i := 0; i < 3000; i++ {
+		time.Sleep(10 * time.Millisecond)
+		if p.isRunning == false {
+			break
+		}
+	}
+	return nil
 }
 
 func (m *manager) restart(p *processData) error {
