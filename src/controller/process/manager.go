@@ -76,6 +76,7 @@ func updateProcessStatus(p *processData, started bool, pid int) {
 	if started {
 		status.Value = "1"
 		p.process.Pid = pid
+		p.process.StartTime = time.Now().Local().Format("2006-01-02 15:04:05")
 	} else {
 		status.Value = "0"
 		p.process.Pid = 0

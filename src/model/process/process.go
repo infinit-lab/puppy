@@ -50,6 +50,11 @@ func init() {
 				Type:    "INTEGER",
 				Default: "0",
 			},
+			{
+				Name: "startTime",
+				Type: "VARCHAR(32)",
+				Default: "",
+			},
 		},
 	}
 	if err := base.Sqlite.InitializeTable(processTable); err != nil {
@@ -95,6 +100,7 @@ type Process struct {
 	Config string `json:"config"`
 	Enable bool   `json:"enable"`
 	Pid    int    `json:"pid"`
+	StartTime string `json:"startTime"`
 }
 
 type Status struct {
@@ -104,12 +110,12 @@ type Status struct {
 }
 
 const (
-	selectProcess = "SELECT `id`, `name`, `path`, `dir`, `config`, `enable`, `pid` FROM `process` "
+	selectProcess = "SELECT `id`, `name`, `path`, `dir`, `config`, `enable`, `pid`, `startTime` FROM `process` "
 )
 
 func scanProcess(rows *sql.Rows) (*Process, error) {
 	p := new(Process)
-	if err := rows.Scan(&p.Id, &p.Name, &p.Path, &p.Dir, &p.Config, &p.Enable, &p.Pid); err != nil {
+	if err := rows.Scan(&p.Id, &p.Name, &p.Path, &p.Dir, &p.Config, &p.Enable, &p.Pid, &p.StartTime); err != nil {
 		return nil, err
 	}
 	return p, nil
@@ -191,8 +197,8 @@ func CreateProcess(p *Process, context interface{}) error {
 
 func UpdateProcess(id int, p *Process, context interface{}) error {
 	_, err := base.Sqlite.Exec("UPDATE `process` "+
-		"SET `name` = ?, `path` = ?, `dir` = ?, `config` = ?, `enable` = ?, `pid` = ? WHERE `id` = ?",
-		p.Name, p.Path, p.Dir, p.Config, p.Enable, p.Pid, id)
+		"SET `name` = ?, `path` = ?, `dir` = ?, `config` = ?, `enable` = ?, `pid` = ?, `startTime` = ? WHERE `id` = ?",
+		p.Name, p.Path, p.Dir, p.Config, p.Enable, p.Pid, p.StartTime, id)
 	if err != nil {
 		return nil
 	}

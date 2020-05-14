@@ -25,9 +25,40 @@
       "path": "string",
       "dir": "string",
       "config": "string",
-      "enable": "bool"
+      "enable": "bool",
+      "startTime": "string", //yyyy-MM-dd hh:mm:ss
     } 
   ]
+}
+```
+
+## GET /api/1/process/{processId}
+
+获取单个进程信息
+
+### Header
+
+```json5
+{
+  "Authorization": "string", //Token
+}
+```
+
+### Response
+
+```json5
+{
+  "result": "bool",
+  "error": "string",
+  "data": {
+  "id": "int",
+  "name": "string",
+  "path": "string",
+  "dir": "string",
+  "config": "string",
+  "enable": "bool",
+  "startTime": "string", //yyyy-MM-dd hh:mm:ss
+  } 
 }
 ```
 

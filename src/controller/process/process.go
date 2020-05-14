@@ -31,6 +31,7 @@ func init() {
 		bus.Subscribe(base.KeyProcessStatus, ph)
 
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process", HandleGetProcessList1, true)
+		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+", HandleGetProcess1, true)
 		httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/process/+/operation", HandlePutProcessOperation1, true)
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+/status", HandleGetProcessStatusList1, true)
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+/status/+", HandleGetProcessStatus1, true)
@@ -58,6 +59,32 @@ func HandleGetProcessList1(w http.ResponseWriter, r *http.Request) {
 	var response getProcessList1Response
 	var err error
 	response.Data, err = process.GetProcessList()
+	if err != nil {
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	response.Result = true
+	httpserver.Response(w, response)
+}
+
+type getProcess1Response struct {
+	httpserver.ResponseBody
+	Data *process.Process `json:"data"`
+}
+
+func HandleGetProcess1(w http.ResponseWriter, r *http.Request) {
+	temp := httpserver.GetId(r.URL.Path, "process")
+	if temp == "" {
+		httpserver.ResponseError(w, "进程ID不存在", http.StatusBadRequest)
+		return
+	}
+	processId, err := strconv.Atoi(temp)
+	if err != nil {
+		httpserver.ResponseError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var response getProcess1Response
+	response.Data, err = process.GetProcess(processId)
 	if err != nil {
 		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
 		return
