@@ -226,3 +226,54 @@
   "error": "message"
 }
 ```
+
+## GET /api/1/process/{processId}/config-file
+
+获取配置文件
+
+### Header
+
+```json5
+{
+  "Authorization": "string" //Token
+}
+```
+
+### Response
+
+```json5
+{
+  "result": "bool",
+  "error": "message",
+  "data": "string" //Base64
+}
+```
+
+## PUT /api/1/process/{processId}/config-file
+
+更新配置文件
+
+### Header
+
+```json5
+{
+  "Authorization": "string" //Token
+}
+```
+
+### Request
+
+```json5
+{
+  "content": "string" //Base64
+}
+```
+
+### Response
+
+```json5
+{
+  "result": "bool",
+  "error": "message",
+}
+```

@@ -2,6 +2,8 @@ package process
 
 import (
 	"archive/zip"
+	"encoding/base64"
+	"errors"
 	"github.com/infinit-lab/taiji/src/model/base"
 	"github.com/infinit-lab/taiji/src/model/process"
 	"github.com/infinit-lab/yolanda/bus"
@@ -51,6 +53,8 @@ func init() {
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/status/+", HandleGetStatusList1, true)
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/statistic", HandleGetProcessStatistic1, true)
 		httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/process/+/update-file/+", HandlePutUpdateFile1, true)
+		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+/config-file", HandleGetConfigFile1, true)
+		httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/process/+/config-file", HandlePutConfigFile1, true)
 
 		g = new(guard)
 		g.run()
@@ -83,18 +87,25 @@ func HandleGetProcessList1(w http.ResponseWriter, r *http.Request) {
 	httpserver.Response(w, response)
 }
 
+func getProcessId(r *http.Request) (int, error) {
+	temp := httpserver.GetId(r.URL.Path, "process")
+	if temp == "" {
+		return 0, errors.New("进程ID不存在")
+	}
+	processId, err := strconv.Atoi(temp)
+	if err != nil {
+		return 0, err
+	}
+	return processId, nil
+}
+
 type getProcess1Response struct {
 	httpserver.ResponseBody
 	Data *process.Process `json:"data"`
 }
 
 func HandleGetProcess1(w http.ResponseWriter, r *http.Request) {
-	temp := httpserver.GetId(r.URL.Path, "process")
-	if temp == "" {
-		httpserver.ResponseError(w, "进程ID不存在", http.StatusBadRequest)
-		return
-	}
-	processId, err := strconv.Atoi(temp)
+	processId, err := getProcessId(r)
 	if err != nil {
 		httpserver.ResponseError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -119,12 +130,7 @@ func HandlePutProcessOperation1(w http.ResponseWriter, r *http.Request) {
 		httpserver.ResponseError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	temp := httpserver.GetId(r.URL.Path, "process")
-	if temp == "" {
-		httpserver.ResponseError(w, "无效进程ID", http.StatusBadRequest)
-		return
-	}
-	processId, err := strconv.Atoi(temp)
+	processId, err := getProcessId(r)
 	if err != nil {
 		httpserver.ResponseError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -183,12 +189,7 @@ type getProcessStatusList1Response struct {
 }
 
 func HandleGetProcessStatusList1(w http.ResponseWriter, r *http.Request) {
-	temp := httpserver.GetId(r.URL.Path, "process")
-	if temp == "" {
-		httpserver.ResponseError(w, "无效进程ID", http.StatusBadRequest)
-		return
-	}
-	processId, err := strconv.Atoi(temp)
+	processId, err := getProcessId(r)
 	if err != nil {
 		httpserver.ResponseError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -209,12 +210,7 @@ type getProcessStatus1Response struct {
 }
 
 func HandleGetProcessStatus1(w http.ResponseWriter, r *http.Request) {
-	temp := httpserver.GetId(r.URL.Path, "process")
-	if temp == "" {
-		httpserver.ResponseError(w, "无效进程ID", http.StatusBadRequest)
-		return
-	}
-	processId, err := strconv.Atoi(temp)
+	processId, err := getProcessId(r)
 	if err != nil {
 		httpserver.ResponseError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -294,12 +290,7 @@ func HandlePutUpdateFile1(w http.ResponseWriter, r *http.Request) {
 		_ = r.Body.Close()
 	}()
 
-	temp := httpserver.GetId(r.URL.Path, "process")
-	if temp == "" {
-		httpserver.ResponseError(w, "无效进程ID", http.StatusBadRequest)
-		return
-	}
-	processId, err := strconv.Atoi(temp)
+	processId, err := getProcessId(r)
 	if err != nil {
 		httpserver.ResponseError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -415,6 +406,93 @@ func HandlePutUpdateFile1(w http.ResponseWriter, r *http.Request) {
 		}
 		notification.Status = base.UpdateSuccess
 	}()
+
+	var response httpserver.ResponseBody
+	response.Result = true
+	httpserver.Response(w, response)
+}
+
+type getConfigFile1Response struct {
+	httpserver.ResponseBody
+	Data string `json:"data"`
+}
+
+func HandleGetConfigFile1(w http.ResponseWriter, r *http.Request) {
+	processId, err := getProcessId(r)
+	if err != nil {
+		logutils.Error("Failed to getProcessId. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	p, err := process.GetProcess(processId)
+	if err != nil {
+		logutils.Error("Failed to GetProcess. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	path := filepath.Join(p.Dir, p.ConfigFile)
+	buffer, err := ioutil.ReadFile(path)
+	if err != nil {
+		logutils.Error("Failed to ReadAll. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var response getConfigFile1Response
+	response.Data = base64.StdEncoding.EncodeToString(buffer)
+	response.Result = true
+	httpserver.Response(w, response)
+}
+
+type putConfigFile1Request struct {
+	Content string `json:"content"`
+}
+
+func HandlePutConfigFile1(w http.ResponseWriter, r *http.Request) {
+	processId, err := getProcessId(r)
+	if err != nil {
+		httpserver.ResponseError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var request putConfigFile1Request
+	err = httpserver.GetRequestBody(r, &request)
+	if err != nil {
+		logutils.Error("Failed to GetRequestBody. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	content, err := base64.StdEncoding.DecodeString(request.Content)
+	if err != nil {
+		logutils.Error("Failed to DecodeString. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	p, err := process.GetProcess(processId)
+	if err != nil {
+		logutils.Error("Failed to GetProcess. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	path := filepath.Join(p.Dir, p.ConfigFile)
+	file, err := os.OpenFile(path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		logutils.Error("Failed to OpenFile. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	_, err = file.Write(content)
+	if err != nil {
+		logutils.Error("Failed to Write. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	var response httpserver.ResponseBody
 	response.Result = true

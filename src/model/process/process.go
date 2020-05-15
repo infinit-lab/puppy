@@ -55,6 +55,11 @@ func init() {
 				Type: "VARCHAR(32)",
 				Default: "",
 			},
+			{
+				Name: "configFile",
+				Type: "VARCHAR(256)",
+				Default: "",
+			},
 		},
 	}
 	if err := base.Sqlite.InitializeTable(processTable); err != nil {
@@ -101,6 +106,7 @@ type Process struct {
 	Enable bool   `json:"enable"`
 	Pid    int    `json:"pid"`
 	StartTime string `json:"startTime"`
+	ConfigFile string `json:"configFile"`
 }
 
 type Status struct {
@@ -110,12 +116,14 @@ type Status struct {
 }
 
 const (
-	selectProcess = "SELECT `id`, `name`, `path`, `dir`, `config`, `enable`, `pid`, `startTime` FROM `process` "
+	selectProcess = "SELECT `id`, `name`, `path`, `dir`, `config`, `enable`, `pid`, `startTime`, `configFile` " +
+		"FROM `process` "
 )
 
 func scanProcess(rows *sql.Rows) (*Process, error) {
 	p := new(Process)
-	if err := rows.Scan(&p.Id, &p.Name, &p.Path, &p.Dir, &p.Config, &p.Enable, &p.Pid, &p.StartTime); err != nil {
+	err := rows.Scan(&p.Id, &p.Name, &p.Path, &p.Dir, &p.Config, &p.Enable, &p.Pid, &p.StartTime, &p.ConfigFile)
+	if err != nil {
 		return nil, err
 	}
 	return p, nil
@@ -171,8 +179,8 @@ func GetProcessList() ([]*Process, error) {
 }
 
 func CreateProcess(p *Process, context interface{}) error {
-	ret, err := base.Sqlite.Exec("INSERT INTO `process` (`name`, `path`, `dir`, `config`, `enable`, `pid`) "+
-		"VALUES (?, ?, ?, ?, ?, ?)", p.Name, p.Path, p.Dir, p.Config, p.Enable, p.Pid)
+	ret, err := base.Sqlite.Exec("INSERT INTO `process` (`name`, `path`, `dir`, `config`, `enable`, `pid`, `configFile`) "+
+		"VALUES (?, ?, ?, ?, ?, ?, ?)", p.Name, p.Path, p.Dir, p.Config, p.Enable, p.Pid, p.ConfigFile)
 	var id int64
 	if err != nil {
 		return err
@@ -197,8 +205,9 @@ func CreateProcess(p *Process, context interface{}) error {
 
 func UpdateProcess(id int, p *Process, context interface{}) error {
 	_, err := base.Sqlite.Exec("UPDATE `process` "+
-		"SET `name` = ?, `path` = ?, `dir` = ?, `config` = ?, `enable` = ?, `pid` = ?, `startTime` = ? WHERE `id` = ?",
-		p.Name, p.Path, p.Dir, p.Config, p.Enable, p.Pid, p.StartTime, id)
+		"SET `name` = ?, `path` = ?, `dir` = ?, `config` = ?, `enable` = ?, `pid` = ?, `startTime` = ?, `configFile` = ? " +
+		"WHERE `id` = ?",
+		p.Name, p.Path, p.Dir, p.Config, p.Enable, p.Pid, p.StartTime, p.ConfigFile, id)
 	if err != nil {
 		return nil
 	}
