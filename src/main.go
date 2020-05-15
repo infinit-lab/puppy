@@ -16,7 +16,7 @@ import (
 func main() {
 	logutils.Trace("Starting...")
 	for i, arg := range os.Args {
-		logutils.TraceF("%d. %s", i + 1, arg)
+		logutils.TraceF("%d. %s", i+1, arg)
 	}
 	logutils.Trace("Pid is ", os.Getpid())
 
@@ -31,7 +31,7 @@ func main() {
 
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt)
-	s := <- c
+	s := <-c
 	logutils.Trace("Got signal: ", s)
 
 	if !isGuard {

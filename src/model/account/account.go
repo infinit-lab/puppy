@@ -11,19 +11,19 @@ import (
 
 func init() {
 	logutils.Trace("Initializing model account...")
-	table := sqlite.Table {
+	table := sqlite.Table{
 		Name: "account",
-		Columns: []sqlite.Column {
+		Columns: []sqlite.Column{
 			{
-				Name: "username",
-				Type: "VARCHAR(64)",
+				Name:    "username",
+				Type:    "VARCHAR(64)",
 				Default: "",
-				Index: true,
-				Unique: true,
+				Index:   true,
+				Unique:  true,
 			},
 			{
-				Name: "password",
-				Type: "CHAR(32)",
+				Name:    "password",
+				Type:    "CHAR(32)",
 				Default: "",
 			},
 		},
@@ -88,4 +88,3 @@ func ChangePassword(username string, originPassword string, newPassword string, 
 	_ = bus.PublishResource(base.KeyPassword, base.StatusUpdated, username, nil, context)
 	return err
 }
-

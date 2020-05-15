@@ -26,7 +26,7 @@ var g *guard
 var s *slave
 
 type updateManager struct {
-	mutex sync.Mutex
+	mutex   sync.Mutex
 	updates map[int]string
 }
 
@@ -55,6 +55,7 @@ func init() {
 		httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/process/+/update-file/+", HandlePutUpdateFile1, true)
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+/config-file", HandleGetConfigFile1, true)
 		httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/process/+/config-file", HandlePutConfigFile1, true)
+		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+/log-file", HandleGetLogFile1, true)
 
 		g = new(guard)
 		g.run()
@@ -323,7 +324,7 @@ func HandlePutUpdateFile1(w http.ResponseWriter, r *http.Request) {
 	}
 	um.insertUpdate(processId, updateId)
 	go func() {
-		notification := base.UpdateNotification {
+		notification := base.UpdateNotification{
 			Status:  base.UpdateUpdating,
 			Current: 0,
 			Total:   len(zipReader.File),
@@ -376,7 +377,7 @@ func HandlePutUpdateFile1(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				outFile, err := os.OpenFile(path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, file.Mode())
+				outFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
 				if err != nil {
 					logutils.Error("Failed to OpenFile. error: ", err)
 					notification.Status = base.UpdateFail
@@ -477,7 +478,7 @@ func HandlePutConfigFile1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	path := filepath.Join(p.Dir, p.ConfigFile)
-	file, err := os.OpenFile(path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, os.ModePerm)
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		logutils.Error("Failed to OpenFile. error: ", err)
 		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
@@ -497,4 +498,53 @@ func HandlePutConfigFile1(w http.ResponseWriter, r *http.Request) {
 	var response httpserver.ResponseBody
 	response.Result = true
 	httpserver.Response(w, response)
+}
+
+func HandleGetLogFile1(w http.ResponseWriter, r *http.Request) {
+	processId, err := getProcessId(r)
+	if err != nil {
+		httpserver.ResponseError(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	p, err := m.getProcessData(processId)
+	if err != nil {
+		logutils.Error("Failed to getProcessData. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	file, err := os.Open(p.logFilePath)
+	if err != nil {
+		logutils.Error("Failed to Open. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	p.fileMutex.Lock()
+	defer p.fileMutex.Unlock()
+
+	fileStat, err := file.Stat()
+	if err != nil {
+		logutils.Error("Failed to Stat. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, fileName := filepath.Split(p.logFilePath)
+
+	w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
+	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("Content-Length", strconv.FormatInt(fileStat.Size(), 10))
+	w.Header().Set("File-Name", fileName)
+
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		logutils.Error("Failed to Seek. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, _ = io.Copy(w, file)
 }

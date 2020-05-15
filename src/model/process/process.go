@@ -51,13 +51,13 @@ func init() {
 				Default: "0",
 			},
 			{
-				Name: "startTime",
-				Type: "VARCHAR(32)",
+				Name:    "startTime",
+				Type:    "VARCHAR(32)",
 				Default: "",
 			},
 			{
-				Name: "configFile",
-				Type: "VARCHAR(256)",
+				Name:    "configFile",
+				Type:    "VARCHAR(256)",
 				Default: "",
 			},
 		},
@@ -98,14 +98,14 @@ func init() {
 }
 
 type Process struct {
-	Id     int    `json:"id"`
-	Name   string `json:"name"`
-	Path   string `json:"path"`
-	Dir    string `json:"path"`
-	Config string `json:"config"`
-	Enable bool   `json:"enable"`
-	Pid    int    `json:"pid"`
-	StartTime string `json:"startTime"`
+	Id         int    `json:"id"`
+	Name       string `json:"name"`
+	Path       string `json:"path"`
+	Dir        string `json:"path"`
+	Config     string `json:"config"`
+	Enable     bool   `json:"enable"`
+	Pid        int    `json:"pid"`
+	StartTime  string `json:"startTime"`
 	ConfigFile string `json:"configFile"`
 }
 
@@ -205,7 +205,7 @@ func CreateProcess(p *Process, context interface{}) error {
 
 func UpdateProcess(id int, p *Process, context interface{}) error {
 	_, err := base.Sqlite.Exec("UPDATE `process` "+
-		"SET `name` = ?, `path` = ?, `dir` = ?, `config` = ?, `enable` = ?, `pid` = ?, `startTime` = ?, `configFile` = ? " +
+		"SET `name` = ?, `path` = ?, `dir` = ?, `config` = ?, `enable` = ?, `pid` = ?, `startTime` = ?, `configFile` = ? "+
 		"WHERE `id` = ?",
 		p.Name, p.Path, p.Dir, p.Config, p.Enable, p.Pid, p.StartTime, p.ConfigFile, id)
 	if err != nil {

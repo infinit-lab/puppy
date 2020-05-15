@@ -11,10 +11,9 @@ import (
 var token string
 
 type tokenHandler struct {
-
 }
 
-func (h* tokenHandler) Handle(key int, resource *bus.Resource) {
+func (h *tokenHandler) Handle(key int, resource *bus.Resource) {
 	switch key {
 	case base.KeyToken:
 		token := resource.Data.(*Token)

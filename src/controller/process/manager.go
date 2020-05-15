@@ -3,12 +3,14 @@ package process
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"github.com/infinit-lab/taiji/src/model/base"
 	"github.com/infinit-lab/taiji/src/model/process"
 	"github.com/infinit-lab/yolanda/bus"
 	"github.com/infinit-lab/yolanda/logutils"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -16,12 +18,15 @@ import (
 )
 
 type processData struct {
-	process process.Process
-	cmd     *exec.Cmd
-	isStart bool
-	isRunning bool
-	mutex   sync.Mutex
-	reader  *bufio.Reader
+	process     process.Process
+	cmd         *exec.Cmd
+	isStart     bool
+	isRunning   bool
+	mutex       sync.Mutex
+	reader      *bufio.Reader
+	errReader   *bufio.Reader
+	logFilePath string
+	fileMutex   sync.Mutex
 }
 
 type manager struct {
@@ -87,6 +92,62 @@ func updateProcessStatus(p *processData, started bool, pid int) {
 	_ = process.UpdateProcess(p.process.Id, &p.process, nil)
 }
 
+func (m *manager) storeLog(p *processData, wg *sync.WaitGroup) (*os.File, error) {
+	var file *os.File
+	fileName := fmt.Sprintf("process-log/%s-%d.log", p.process.Name, p.cmd.Process.Pid)
+	pwd, err := os.Getwd()
+	if err != nil {
+		logutils.Error("Failed to Getwd. error: ", err)
+		return nil, err
+	}
+	filePath := filepath.Join(pwd, fileName)
+	err = os.MkdirAll(filepath.Dir(filePath), os.ModePerm)
+	if err != nil {
+		logutils.Error("Failed to MkdirAll. error: ", err)
+		return nil, err
+	}
+	file, err = os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		logutils.Error("Failed to OpenFile. error: ", err)
+		return nil, err
+	}
+	p.logFilePath = filePath
+	wg.Add(1)
+	go func() {
+		for p.reader != nil {
+			line, err := p.reader.ReadString('\n')
+			if err != nil {
+				break
+			}
+			p.fileMutex.Lock()
+			_, err = file.WriteString(line)
+			p.fileMutex.Unlock()
+			if err != nil {
+				break
+			}
+		}
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		for p.errReader != nil {
+			line, err := p.errReader.ReadString('\n')
+			if err != nil {
+				break
+			}
+			p.fileMutex.Lock()
+			_, err = file.WriteString(line)
+			p.fileMutex.Unlock()
+			if err != nil {
+				break
+			}
+		}
+		wg.Done()
+	}()
+	return file, nil
+}
+
 func (m *manager) start(p *processData) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
@@ -119,6 +180,16 @@ func (m *manager) start(p *processData) error {
 			} else {
 				p.reader = bufio.NewReader(stdout)
 			}
+
+			stderr, err := p.cmd.StderrPipe()
+			if err != nil {
+				logutils.ErrorF("Failed ato get %s StderrPipe. error: %v", p.process.Name, err)
+				p.cmd = nil
+				continue
+			} else {
+				p.errReader = bufio.NewReader(stderr)
+			}
+
 			if err := p.cmd.Start(); err != nil {
 				logutils.ErrorF("Failed to start %s. error: %v", p.process.Name, err)
 				updateProcessStatus(p, false, 0)
@@ -129,15 +200,8 @@ func (m *manager) start(p *processData) error {
 			logutils.Trace("Success to start ", p.process.Name)
 			updateProcessStatus(p, true, p.cmd.Process.Pid)
 
-			if p.reader != nil {
-				for {
-					_, err := p.reader.ReadString('\n')
-					if err != nil {
-						break
-					}
-					// logutils.Trace(line) TODO
-				}
-			}
+			var wg sync.WaitGroup
+			file, _ := m.storeLog(p, &wg)
 
 			if err := p.cmd.Wait(); err != nil {
 				logutils.WarningF("%s quit. error: %v", p.process.Name, err)
@@ -145,8 +209,15 @@ func (m *manager) start(p *processData) error {
 				logutils.WarningF("%s quit.", p.process.Name)
 			}
 			updateProcessStatus(p, false, 0)
+
+			wg.Wait()
+			if file != nil {
+				_ = file.Close()
+			}
+
 			p.cmd = nil
 			p.reader = nil
+			p.errReader = nil
 		}
 		p.isRunning = false
 	}()

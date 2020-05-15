@@ -26,12 +26,12 @@ func init() {
 }
 
 const (
-	KeyAll           int = 0
-	KeyToken         int = 1
-	KeyPassword      int = 2
-	KeyCpuUseRate    int = 3
-	KeyMemUseRate    int = 4
-	KeyProcess       int = 5
+	KeyAll        int = 0
+	KeyToken      int = 1
+	KeyPassword   int = 2
+	KeyCpuUseRate int = 3
+	KeyMemUseRate int = 4
+	KeyProcess    int = 5
 	//KeyProcessEnable int = 6
 	KeyProcessStatus int = 7
 	KeyStatistic     int = 8
@@ -64,14 +64,14 @@ const (
 
 const (
 	UpdateUpdating int = 1
-	UpdateSuccess int = 2
-	UpdateFail int = 3
+	UpdateSuccess  int = 2
+	UpdateFail     int = 3
 )
 
 type UpdateNotification struct {
-	Status int `json:"status"`
+	Status  int `json:"status"`
 	Current int `json:"current"`
-	Total int `json:"total"`
+	Total   int `json:"total"`
 }
 
 type Statistic struct {

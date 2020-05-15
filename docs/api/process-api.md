@@ -216,7 +216,7 @@
 
 ### Request
 
-升级压缩包
+升级压缩包二进制
 
 ### Response
 
@@ -277,3 +277,19 @@
   "error": "message",
 }
 ```
+
+## GET /api/1/process/{processId}/log-file
+
+下载进程日志文件
+
+### Header
+
+```json5
+{
+  "Authorization": "string" //Token
+}
+```
+
+### Response
+
+日志文件二进制

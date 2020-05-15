@@ -72,7 +72,7 @@ func (s *slave) quit() {
 }
 
 func (s *slave) run() {
-	go func () {
+	go func() {
 		s.pid = config.GetInt("process.pid")
 		logutils.Trace("Get pid is ", s.pid)
 		pro, err := os.FindProcess(s.pid)

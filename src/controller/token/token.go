@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var ps *passwordSubscriber;
+var ps *passwordSubscriber
 
 func init() {
 	logutils.Trace("Initializing controller token...")

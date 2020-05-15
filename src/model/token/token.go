@@ -17,35 +17,35 @@ var c *cache.Cache
 
 func init() {
 	logutils.Trace("Initializing model token...")
-	table := sqlite.Table {
+	table := sqlite.Table{
 		Name: "token",
-		Columns: []sqlite.Column {
+		Columns: []sqlite.Column{
 			{
-				Name: "token",
-				Type: "CHAR(32)",
+				Name:    "token",
+				Type:    "CHAR(32)",
 				Default: "",
-				Index: true,
-				Unique: true,
+				Index:   true,
+				Unique:  true,
 			},
 			{
-				Name: "username",
-				Type: "VARCHAR(64)",
+				Name:    "username",
+				Type:    "VARCHAR(64)",
 				Default: "",
-				Index: true,
+				Index:   true,
 			},
 			{
-				Name: "ip",
-				Type: "VARCHAR(32)",
+				Name:    "ip",
+				Type:    "VARCHAR(32)",
 				Default: "127.0.0.1",
 			},
 			{
-				Name: "duration",
-				Type: "INTEGER",
+				Name:    "duration",
+				Type:    "INTEGER",
 				Default: "0",
 			},
 			{
-				Name: "time",
-				Type: "DATETIME",
+				Name:    "time",
+				Type:    "DATETIME",
 				Default: "",
 			},
 		},
@@ -58,11 +58,11 @@ func init() {
 }
 
 type Token struct {
-	Token string `json:"token"`
+	Token    string `json:"token"`
 	Username string `json:"username"`
-	Ip string `json:"ip"`
-	Duration int `json:"duration"`
-	Time string `json:"time"`
+	Ip       string `json:"ip"`
+	Duration int    `json:"duration"`
+	Time     string `json:"time"`
 }
 
 func currentDateTime() string {
@@ -117,7 +117,7 @@ func GetToken(token string) (*Token, error) {
 	if ok == true {
 		return t.(*Token), nil
 	}
-	rows, err := base.Sqlite.Query(selectToken + "WHERE `token` = ? LIMIT 1", token)
+	rows, err := base.Sqlite.Query(selectToken+"WHERE `token` = ? LIMIT 1", token)
 	if err != nil {
 		return nil, err
 	}
