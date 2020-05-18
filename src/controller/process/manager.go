@@ -159,7 +159,6 @@ func (m *manager) start(p *processData) error {
 	p.isRunning = true
 	go func() {
 		for p.isStart {
-			time.Sleep(100 * time.Millisecond)
 			p.cmd = new(exec.Cmd)
 			p.cmd.Path = p.process.Path
 			p.cmd.Args = []string{
@@ -218,8 +217,12 @@ func (m *manager) start(p *processData) error {
 			p.cmd = nil
 			p.reader = nil
 			p.errReader = nil
+			if p.isStart {
+				time.Sleep(500 * time.Millisecond)
+			}
 		}
 		p.isRunning = false
+		logutils.TraceF("Thread %s is Quit.", p.process.Name)
 	}()
 	return nil
 }
@@ -232,10 +235,15 @@ func (m *manager) stop(p *processData) error {
 		return nil
 	}
 	p.isStart = false
+	logutils.ErrorF("%s isStart is %v", p.process.Name, p.isStart)
+	if p.cmd == nil {
+		return nil
+	}
 	if err := p.cmd.Process.Kill(); err != nil {
-		logutils.Error("Failed to Kill. error: ", err)
+		logutils.ErrorF("Failed to Kill %s. error: %v", p.process.Name, err)
 		return err
 	}
+
 	for i := 0; i < 3000; i++ {
 		time.Sleep(10 * time.Millisecond)
 		if p.isRunning == false {
@@ -300,20 +308,15 @@ func (m *manager) updateStatistic() error {
 }
 
 func (m *manager) quit() {
+	var wg sync.WaitGroup
 	for _, data := range m.processList {
-		_ = m.stop(data)
-		for i := 0; i < 100; i++ {
-			time.Sleep(100 * time.Millisecond)
-			status, err := process.GetStatus(data.process.Id, base.StatusTypeStarted)
-			if err != nil {
-				logutils.Error("Failed to GetStatus. error: ", err)
-				break
-			}
-			if status.Value == "0" {
-				break
-			}
-		}
+		wg.Add(1)
+		go func() {
+			_ = m.stop(data)
+			wg.Done()
+		}()
 	}
+	wg.Wait()
 }
 
 type processHandler struct {
