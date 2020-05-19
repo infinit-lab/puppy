@@ -5,9 +5,13 @@ import (
 	"net/http"
 )
 
-var Version string
-var CommitId string
-var BuildTime string
+type Version struct {
+	Version string `json:"version"`
+	CommitId string `json:"commitId"`
+	BuildTime string `json:"buildTime"`
+}
+
+var version Version
 
 func init() {
 	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/version", HandleGetVersion1, false)
@@ -15,16 +19,22 @@ func init() {
 
 type GetVersion1Response struct {
 	httpserver.ResponseBody
-	Version string `json:"version"`
-	CommitId string `json:"commitId"`
-	BuildTime string `json:"buildTime"`
+	Data struct {
+		Version string `json:"version"`
+		CommitId string `json:"commitId"`
+		BuildTime string `json:"buildTime"`
+	} `json:"data"`
 }
 
 func HandleGetVersion1(w http.ResponseWriter, r *http.Request) {
 	var response GetVersion1Response
 	response.Result = true
-	response.Version = Version
-	response.CommitId = CommitId
-	response.BuildTime = BuildTime
+	response.Data.Version = version.Version
+	response.Data.CommitId = version.CommitId
+	response.Data.BuildTime = version.BuildTime
 	httpserver.Response(w, response)
+}
+
+func SetVersion(v *Version) {
+	version = *v
 }

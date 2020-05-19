@@ -5,7 +5,7 @@ import (
 	_ "github.com/infinit-lab/taiji/src/controller/notification"
 	_ "github.com/infinit-lab/taiji/src/controller/performance"
 	"github.com/infinit-lab/taiji/src/controller/process"
-	_ "github.com/infinit-lab/taiji/src/controller/system"
+	"github.com/infinit-lab/taiji/src/controller/system"
 	_ "github.com/infinit-lab/taiji/src/controller/token"
 	"github.com/infinit-lab/yolanda/config"
 	"github.com/infinit-lab/yolanda/httpserver"
@@ -13,6 +13,10 @@ import (
 	"os"
 	"os/signal"
 )
+
+var Version string
+var CommitId string
+var BuildTime string
 
 func main() {
 	logutils.Trace("Starting...")
@@ -26,6 +30,12 @@ func main() {
 
 	if !isGuard {
 		go func() {
+			v := system.Version {
+				Version: Version,
+				CommitId: CommitId,
+				BuildTime: BuildTime,
+			}
+			system.SetVersion(&v)
 			_ = httpserver.ListenAndServe()
 		}()
 	}
