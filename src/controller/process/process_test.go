@@ -97,6 +97,7 @@ func putProcessOperation1(operation string, t *testing.T) {
 	}
 }
 
+/*
 func TestHandlePutProcessOperation1(t *testing.T) {
 	putProcessOperation1(base.OperateRestart, t)
 	time.Sleep(time.Second)
@@ -111,6 +112,7 @@ func TestHandlePutProcessOperation1(t *testing.T) {
 	putProcessOperation1(base.OperateStop, t)
 	time.Sleep(time.Second)
 }
+*/
 
 func TestHandleGetProcessStatusList1(t *testing.T) {
 	code, rsp, _, err := utils.Request(http.MethodGet, "http://127.0.0.1:8088/api/1/process/"+strconv.Itoa(processId)+"/status", nil, nil, "")
