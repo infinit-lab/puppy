@@ -30,7 +30,6 @@ var tPH *testProcessHandler
 func TestInit(t *testing.T) {
 	tPH = new(testProcessHandler)
 	bus.Subscribe(base.KeyProcess, tPH)
-	bus.Subscribe(base.KeyProcessEnable, tPH)
 	bus.Subscribe(base.KeyProcessStatus, tPH)
 	bus.Subscribe(base.KeyStatistic, tPH)
 
