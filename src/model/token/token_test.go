@@ -1,7 +1,7 @@
 package token
 
 import (
-	"github.com/infinit-lab/puppy/src/model/base"
+	"github.com/infinit-lab/taiji/src/model/base"
 	"github.com/infinit-lab/yolanda/bus"
 	"github.com/infinit-lab/yolanda/logutils"
 	"testing"
