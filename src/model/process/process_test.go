@@ -17,7 +17,7 @@ type processHandler struct {
 
 func (h *processHandler) Handle(key int, value *bus.Resource) {
 	logutils.TraceF("Key is %d, status is %d", key, value.Status)
-	if key == base.KeyProcess || key == base.KeyProcessEnable {
+	if key == base.KeyProcess {
 		switch value.Status {
 		case base.StatusCreated, base.StatusUpdated, base.StatusDeleted:
 			p, ok := value.Data.(*Process)
@@ -51,7 +51,6 @@ func TestInit(t *testing.T) {
 	config.Exec()
 	ph = new(processHandler)
 	bus.Subscribe(base.KeyProcess, ph)
-	bus.Subscribe(base.KeyProcessEnable, ph)
 	bus.Subscribe(base.KeyProcessStatus, ph)
 }
 
