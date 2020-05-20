@@ -194,6 +194,7 @@ func (m *manager) start(p *processData) error {
 				updateProcessStatus(p, false, 0)
 				p.cmd = nil
 				p.reader = nil
+				p.errReader = nil
 				continue
 			}
 			logutils.Trace("Success to start ", p.process.Name)
@@ -344,11 +345,13 @@ func (h *processHandler) Handle(key int, value *bus.Resource) {
 			}
 			data.process = *p
 			if isEnableChanged {
-				if data.process.Enable {
-					_ = h.m.start(data)
-				} else {
-					_ = h.m.stop(data)
-				}
+				go func() {
+					if data.process.Enable {
+						_ = h.m.start(data)
+					} else {
+						_ = h.m.stop(data)
+					}
+				}()
 			}
 		}
 	}
