@@ -200,7 +200,7 @@ func (m *manager) start(p *processData) error {
 			updateProcessStatus(p, true, p.cmd.Process.Pid)
 
 			var wg sync.WaitGroup
-			// file, _ := m.storeLog(p, &wg)
+			file, _ := m.storeLog(p, &wg)
 
 			if err := p.cmd.Wait(); err != nil {
 				logutils.WarningF("%s quit. error: %v", p.process.Name, err)
@@ -235,7 +235,7 @@ func (m *manager) stop(p *processData) error {
 		return nil
 	}
 	p.isStart = false
-	logutils.ErrorF("%s isStart is %v", p.process.Name, p.isStart)
+	logutils.TraceF("%s isStart is %v", p.process.Name, p.isStart)
 	if p.cmd == nil {
 		return nil
 	}
