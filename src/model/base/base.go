@@ -55,11 +55,14 @@ const (
 )
 
 const (
-	OperateStart   string = "start"
-	OperateStop    string = "stop"
-	OperateRestart string = "restart"
-	OperateEnable  string = "enable"
-	OperateDisable string = "disable"
+	OperateStart       string = "start"
+	OperateStop        string = "stop"
+	OperateRestart     string = "restart"
+	OperateEnable      string = "enable"
+	OperateDisable     string = "disable"
+	OperateUpdate      string = "update"
+	OperateConfig      string = "config"
+	OperateDownloadLog string = "download_log"
 )
 
 const (

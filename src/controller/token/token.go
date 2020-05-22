@@ -13,11 +13,13 @@ import (
 )
 
 var ps *passwordSubscriber
+var ts *tokenSubscriber
 
 func init() {
 	logutils.Trace("Initializing controller token...")
 	ps = new(passwordSubscriber)
 	bus.Subscribe(base.KeyPassword, ps)
+	bus.Subscribe(base.KeyToken, ts)
 	httpserver.RegisterTokenChecker(new(tokenChecker))
 
 	httpserver.RegisterHttpHandlerFunc(http.MethodPost, "/api/1/token", HandlePostToken1, false)

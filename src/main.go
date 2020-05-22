@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "github.com/infinit-lab/taiji/src/controller/account"
+	_ "github.com/infinit-lab/taiji/src/controller/log"
 	_ "github.com/infinit-lab/taiji/src/controller/notification"
 	_ "github.com/infinit-lab/taiji/src/controller/performance"
 	"github.com/infinit-lab/taiji/src/controller/process"

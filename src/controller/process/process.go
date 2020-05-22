@@ -5,7 +5,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"github.com/infinit-lab/taiji/src/model/base"
+	"github.com/infinit-lab/taiji/src/model/log"
 	"github.com/infinit-lab/taiji/src/model/process"
+	"github.com/infinit-lab/taiji/src/model/token"
 	"github.com/infinit-lab/yolanda/bus"
 	"github.com/infinit-lab/yolanda/config"
 	"github.com/infinit-lab/yolanda/httpserver"
@@ -18,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 var m *manager
@@ -125,6 +128,29 @@ type putProcessOperation1Request struct {
 	Operation string `json:"operation"`
 }
 
+func createOperateLog(r *http.Request, processId int, operate string) {
+	a := r.Header["Authorization"]
+	t, err := token.GetToken(a[0])
+	if err != nil {
+		logutils.Error("Failed to GetToken. error: ", err)
+		return
+	}
+	p, err := process.GetProcess(processId)
+	if err != nil {
+		logutils.Error("Failed to GetProcess. error: ", err)
+		return
+	}
+	l := log.OperateLog{
+		Username:    t.Username,
+		Ip:          t.Ip,
+		Operate:     operate,
+		ProcessId:   processId,
+		ProcessName: p.Name,
+		Time:        time.Now().Local().Format("2006-01-02 15:04:05"),
+	}
+	_ = log.CreateOperateLog(&l)
+}
+
 func HandlePutProcessOperation1(w http.ResponseWriter, r *http.Request) {
 	var request putProcessOperation1Request
 	if err := httpserver.GetRequestBody(r, &request); err != nil {
@@ -182,6 +208,7 @@ func HandlePutProcessOperation1(w http.ResponseWriter, r *http.Request) {
 	}
 	response.Result = true
 	httpserver.Response(w, response)
+	createOperateLog(r, processId, request.Operation)
 }
 
 type getProcessStatusList1Response struct {
@@ -411,6 +438,7 @@ func HandlePutUpdateFile1(w http.ResponseWriter, r *http.Request) {
 	var response httpserver.ResponseBody
 	response.Result = true
 	httpserver.Response(w, response)
+	createOperateLog(r, processId, base.OperateUpdate)
 }
 
 type getConfigFile1Response struct {
@@ -498,6 +526,7 @@ func HandlePutConfigFile1(w http.ResponseWriter, r *http.Request) {
 	var response httpserver.ResponseBody
 	response.Result = true
 	httpserver.Response(w, response)
+	createOperateLog(r, processId, base.OperateConfig)
 }
 
 func HandleGetLogFile1(w http.ResponseWriter, r *http.Request) {
@@ -547,4 +576,5 @@ func HandleGetLogFile1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, _ = io.Copy(w, file)
+	createOperateLog(r, processId, base.OperateDownloadLog)
 }
