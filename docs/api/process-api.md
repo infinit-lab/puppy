@@ -200,7 +200,7 @@
 }
 ```
 
-## PUT /api/1/process/{processId}/update-file/{fileId}
+## PUT /api/1/process/{processId}/update-file
 
 更新进程
 
@@ -293,3 +293,28 @@
 ### Response
 
 日志文件二进制
+
+## PUT /api/1/update-file
+
+批量升级进程
+
+### Header
+
+```json5
+{
+  "Authorization": "string" //Token
+}
+```
+
+### Request
+
+升级二进制文件
+
+### Response
+
+```json5
+{
+  "result": "bool",
+  "error": "string"
+}
+```

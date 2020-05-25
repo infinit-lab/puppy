@@ -55,7 +55,8 @@ func init() {
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+/status/+", HandleGetProcessStatus1, true)
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/status/+", HandleGetStatusList1, true)
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/statistic", HandleGetProcessStatistic1, true)
-		httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/process/+/update-file/+", HandlePutUpdateFile1, true)
+		httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/process/+/update-file", HandlePutUpdateFile1, true)
+		httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/update-file", HandleBatchPutUpdateFile1, true)
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+/config-file", HandleGetConfigFile1, true)
 		httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/process/+/config-file", HandlePutConfigFile1, true)
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+/log-file", HandleGetLogFile1, true)
@@ -313,6 +314,157 @@ func (m *updateManager) eraseUpdate(processId int) {
 	delete(m.updates, processId)
 }
 
+func updateProcess(processId int, fileList []*zip.File) error {
+	if um.isUpdating(processId) {
+		logutils.ErrorF("Process %d is updating.", processId)
+		return errors.New("正在升级")
+	}
+	um.insertUpdate(processId, "")
+	notification := base.UpdateNotification{
+		Status:  base.UpdateUpdating,
+		Current: 0,
+		Total:   len(fileList),
+	}
+	_ = bus.PublishResource(base.KeyUpdate, base.StatusUpdated, strconv.Itoa(processId), &notification, nil)
+
+	defer func() {
+		_ = bus.PublishResource(base.KeyUpdate, base.StatusUpdated, strconv.Itoa(processId), &notification, nil)
+		um.eraseUpdate(processId)
+	}()
+
+	p, err := m.getProcessData(processId)
+	if err != nil {
+		logutils.Error("Failed to getProcessData. error: ", err)
+		notification.Status = base.UpdateFail
+		return errors.New("获取进程数据失败")
+	}
+	isStart := p.isStart
+	if isStart {
+		if err := m.stop(p); err != nil {
+			logutils.Error("Failed to stop. error: ", err)
+			notification.Status = base.UpdateFail
+			return errors.New("停止进程失败")
+		}
+	}
+
+	destDir := p.process.Dir
+	for _, file := range fileList {
+		logutils.Trace("File name is ", file.Name)
+		path := filepath.Join(destDir, file.Name)
+		if file.FileInfo().IsDir() {
+			if err := os.MkdirAll(path, os.ModePerm); err != nil {
+				logutils.Error("Failed to MkdirAll. error: ", err)
+				notification.Status = base.UpdateFail
+				return errors.New("创建路径失败")
+			}
+			notification.Current++
+			_ = bus.PublishResource(base.KeyUpdate, base.StatusUpdated, strconv.Itoa(processId), &notification, nil)
+		} else {
+			if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+				logutils.Error("Failed to MkdirAll. error: ", err)
+				notification.Status = base.UpdateFail
+				return errors.New("创建路径失败")
+			}
+
+			inFile, err := file.Open()
+			if err != nil {
+				logutils.Error("Failed to Open. error: ", err)
+				notification.Status = base.UpdateFail
+				return errors.New("打开文件失败")
+			}
+
+			outFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
+			if err != nil {
+				logutils.Error("Failed to OpenFile. error: ", err)
+				notification.Status = base.UpdateFail
+				_ = inFile.Close()
+				return errors.New("打开文件失败")
+			}
+
+			_, err = io.Copy(outFile, inFile)
+			_ = inFile.Close()
+			_ = outFile.Close()
+
+			if err != nil {
+				logutils.Error("Failed to Copy. error: ", err)
+				notification.Status = base.UpdateFail
+				return errors.New("拷贝文件失败")
+			}
+
+			notification.Current++
+			_ = bus.PublishResource(base.KeyUpdate, base.StatusUpdated, strconv.Itoa(processId), &notification, nil)
+		}
+	}
+
+	if isStart {
+		if err := m.start(p); err != nil {
+			logutils.Error("Failed to start. error: ", err)
+		}
+	}
+	notification.Status = base.UpdateSuccess
+	return nil
+}
+
+func HandleBatchPutUpdateFile1(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		_ = r.Body.Close()
+	}()
+
+	buffer, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		logutils.Error("Failed to ReadAll. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	reader := strings.NewReader(string(buffer))
+	zipReader, err := zip.NewReader(reader, int64(len(buffer)))
+	if err != nil {
+		logutils.Error("Failed to NewReader. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	processList, err := process.GetProcessList()
+	if err != nil {
+		logutils.Error("Failed to GetProcessList. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	go func() {
+		fileMap := make(map[string][]*zip.File)
+		for _, file := range zipReader.File {
+			paths := strings.Split(file.Name, "/")
+			for i, path := range paths {
+				if path == "processes" && i+2 < len(path) && paths[i+1] != "" && paths[i+2] != "" {
+					processName := paths[i+1]
+					fileList, ok := fileMap[processName]
+					if !ok {
+						var l []*zip.File
+						fileMap[processName] = l
+						fileList = l
+					}
+					file.Name = filepath.Join(paths[i+2:]...)
+					fileList = append(fileList, file)
+					fileMap[processName] = fileList
+					break
+				}
+			}
+		}
+		for processName, fileList := range fileMap {
+			for _, p := range processList {
+				if p.Name == processName {
+					_ = updateProcess(p.Id, fileList)
+					break
+				}
+			}
+		}
+	}()
+
+	var response httpserver.ResponseBody
+	response.Result = true
+	httpserver.Response(w, response)
+}
+
 func HandlePutUpdateFile1(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		_ = r.Body.Close()
@@ -326,12 +478,6 @@ func HandlePutUpdateFile1(w http.ResponseWriter, r *http.Request) {
 
 	if um.isUpdating(processId) {
 		httpserver.ResponseError(w, "进程正在升级", http.StatusConflict)
-		return
-	}
-
-	updateId := httpserver.GetId(r.URL.Path, "update-file")
-	if updateId == "" {
-		httpserver.ResponseError(w, "无效升级文件ID", http.StatusBadRequest)
 		return
 	}
 
@@ -349,90 +495,8 @@ func HandlePutUpdateFile1(w http.ResponseWriter, r *http.Request) {
 		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	um.insertUpdate(processId, updateId)
 	go func() {
-		notification := base.UpdateNotification{
-			Status:  base.UpdateUpdating,
-			Current: 0,
-			Total:   len(zipReader.File),
-		}
-		_ = bus.PublishResource(base.KeyUpdate, base.StatusUpdated, updateId, &notification, nil)
-
-		defer func() {
-			_ = bus.PublishResource(base.KeyUpdate, base.StatusUpdated, updateId, &notification, nil)
-			um.eraseUpdate(processId)
-		}()
-
-		p, err := m.getProcessData(processId)
-		if err != nil {
-			logutils.Error("Failed to getProcessData. error: ", err)
-			notification.Status = base.UpdateFail
-			return
-		}
-		isStart := p.isStart
-		if isStart {
-			if err := m.stop(p); err != nil {
-				logutils.Error("Failed to stop. error: ", err)
-				notification.Status = base.UpdateFail
-				return
-			}
-		}
-
-		destDir := p.process.Dir
-		for _, file := range zipReader.File {
-			logutils.Trace("File name is ", file.Name)
-			path := filepath.Join(destDir, file.Name)
-			if file.FileInfo().IsDir() {
-				if err := os.MkdirAll(path, os.ModePerm); err != nil {
-					logutils.Error("Failed to MkdirAll. error: ", err)
-					notification.Status = base.UpdateFail
-					return
-				}
-				notification.Current++
-				_ = bus.PublishResource(base.KeyUpdate, base.StatusUpdated, updateId, &notification, nil)
-			} else {
-				if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
-					logutils.Error("Failed to MkdirAll. error: ", err)
-					notification.Status = base.UpdateFail
-					return
-				}
-
-				inFile, err := file.Open()
-				if err != nil {
-					logutils.Error("Failed to Open. error: ", err)
-					notification.Status = base.UpdateFail
-					return
-				}
-
-				outFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
-				if err != nil {
-					logutils.Error("Failed to OpenFile. error: ", err)
-					notification.Status = base.UpdateFail
-					_ = inFile.Close()
-					return
-				}
-
-				_, err = io.Copy(outFile, inFile)
-				_ = inFile.Close()
-				_ = outFile.Close()
-
-				if err != nil {
-					logutils.Error("Failed to Copy. error: ", err)
-					notification.Status = base.UpdateFail
-					return
-				}
-
-				notification.Current++
-				_ = bus.PublishResource(base.KeyUpdate, base.StatusUpdated, updateId, &notification, nil)
-			}
-		}
-
-		if isStart {
-			if err := m.start(p); err != nil {
-				logutils.Error("Failed to start. error: ", err)
-			}
-		}
-		notification.Status = base.UpdateSuccess
+		_ = updateProcess(processId, zipReader.File)
 	}()
 
 	var response httpserver.ResponseBody
