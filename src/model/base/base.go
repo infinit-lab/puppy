@@ -26,13 +26,12 @@ func init() {
 }
 
 const (
-	KeyAll        int = 0
-	KeyToken      int = 1
-	KeyPassword   int = 2
-	KeyCpuUseRate int = 3
-	KeyMemUseRate int = 4
-	KeyProcess    int = 5
-	//KeyProcessEnable int = 6
+	KeyAll           int = 0
+	KeyToken         int = 1
+	KeyPassword      int = 2
+	KeyCpuUseRate    int = 3
+	KeyMemUseRate    int = 4
+	KeyProcess       int = 5
 	KeyProcessStatus int = 7
 	KeyStatistic     int = 8
 	KeyUpdate        int = 9

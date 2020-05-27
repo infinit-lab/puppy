@@ -3,6 +3,7 @@ package main
 import (
 	_ "github.com/infinit-lab/taiji/src/controller/account"
 	_ "github.com/infinit-lab/taiji/src/controller/log"
+	_ "github.com/infinit-lab/taiji/src/controller/net"
 	_ "github.com/infinit-lab/taiji/src/controller/notification"
 	_ "github.com/infinit-lab/taiji/src/controller/performance"
 	"github.com/infinit-lab/taiji/src/controller/process"
@@ -31,9 +32,9 @@ func main() {
 
 	if !isGuard {
 		go func() {
-			v := system.Version {
-				Version: Version,
-				CommitId: CommitId,
+			v := system.Version{
+				Version:   Version,
+				CommitId:  CommitId,
 				BuildTime: BuildTime,
 			}
 			system.SetVersion(&v)
