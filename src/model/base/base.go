@@ -62,6 +62,7 @@ const (
 	OperateUpdate      string = "update"
 	OperateConfig      string = "config"
 	OperateDownloadLog string = "download_log"
+	OperateConfigNet   string = "config_net"
 )
 
 const (
