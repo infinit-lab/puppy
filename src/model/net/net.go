@@ -18,8 +18,8 @@ func init() {
 				Name:    "name",
 				Type:    "VARCHAR(256)",
 				Default: "",
-				Index: true,
-				Unique: true,
+				Index:   true,
+				Unique:  true,
 			},
 			{
 				Name:    "ip",
