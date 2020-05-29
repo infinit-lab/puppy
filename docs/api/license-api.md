@@ -43,6 +43,7 @@
   "error": "string",
   "data": {
     "status": "int",
+    "fingerprint": "string",
     "isForever": "bool",
     "validDateTime": "string",
     "validDuration": "int", //second
