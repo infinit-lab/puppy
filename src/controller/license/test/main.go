@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	 // _ = writeLicense()
+	// _ = writeLicense()
 }
 
 func writeLicense() error {
@@ -30,7 +30,7 @@ func writeLicense() error {
 	a.Type = base.AuthDatetime
 	a.Name = "有效日期"
 	a.ValueType = base.ValueTypeDatetime
-	a.Value = []string {
+	a.Value = []string{
 		"2020-05-29 14:00:00",
 	}
 	l.Auth[a.Type] = a
@@ -38,7 +38,7 @@ func writeLicense() error {
 	a.Type = base.AuthDuration
 	a.Name = "有效时间"
 	a.ValueType = base.ValueTypeInt
-	a.Value = []string {
+	a.Value = []string{
 		strconv.Itoa(30 * 60),
 	}
 	l.Auth[a.Type] = a

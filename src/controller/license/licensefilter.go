@@ -9,7 +9,6 @@ import (
 )
 
 type licenseFilter struct {
-
 }
 
 func (f *licenseFilter) Filter(r *http.Request, checkToken bool) error {

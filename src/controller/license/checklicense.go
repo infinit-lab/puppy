@@ -85,7 +85,7 @@ func checkLicense() {
 	}
 }
 
-func checkForever() (bool, error){
+func checkForever() (bool, error) {
 	forever, ok := l.Auth[base.AuthForever]
 	if !ok {
 		logutils.Error("Failed to find ", base.AuthForever)
@@ -147,7 +147,7 @@ func checkDuration() (bool, error) {
 		logutils.Error("Failed to Atoi. error: ", err)
 		return false, err
 	}
-	if d - c <= 0 {
+	if d-c <= 0 {
 		logutils.Error("End of trial!!!")
 		return false, nil
 	}
@@ -301,7 +301,7 @@ func updateDuration(delta int) {
 }
 
 func importLicense(lic *license.License) error {
-	temp := license.License {
+	temp := license.License{
 		Auth: make(map[string]license.Auth),
 	}
 	var err error
@@ -405,7 +405,7 @@ func calculateDuration(lic *license.License) (datetime license.Auth, duration li
 
 	now := time.Now().Local()
 	dt, err := time.Parse("2006-01-02 15:04:05", datetimeAuth.Value[0])
-	if err != nil{
+	if err != nil {
 		logutils.Error("Failed to Parse. error: ", err)
 		return
 	}

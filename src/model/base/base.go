@@ -92,10 +92,10 @@ const (
 )
 
 const (
-	AuthUuid string = "uuid"
-	AuthForever string = "forever"
-	AuthDatetime  string = "datetime"
-	AuthDuration  string = "duration"
+	AuthUuid     string = "uuid"
+	AuthForever  string = "forever"
+	AuthDatetime string = "datetime"
+	AuthDuration string = "duration"
 )
 
 const (
