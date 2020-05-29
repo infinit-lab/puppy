@@ -14,6 +14,7 @@ var cpuUseRate = 0
 var memUseRate base.MemUsage
 
 func init() {
+	logutils.Trace("Initializing controller performance...")
 	go func() {
 		for {
 			rate, err := utils.GetCpuUseRate()

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/infinit-lab/taiji/src/model/base"
+	"github.com/infinit-lab/taiji/src/model/license"
 	"github.com/infinit-lab/taiji/src/model/process"
 	"github.com/infinit-lab/yolanda/bus"
 	"github.com/infinit-lab/yolanda/logutils"
@@ -64,7 +65,7 @@ func (m *manager) run() {
 			_ = stopProcess(data.process.Pid)
 			updateProcessStatus(data, false, 0)
 		}
-		if data.process.Enable {
+		if data.process.Enable && license.GetLicenseStatus() == base.LicenseAuthorized {
 			_ = m.start(data)
 		} else {
 			data.isStart = false

@@ -36,6 +36,7 @@ type updateManager struct {
 var um *updateManager
 
 func init() {
+	logutils.Trace("Initializing controller process...")
 	if config.GetBool("process.guard") {
 		s = new(slave)
 		s.run()

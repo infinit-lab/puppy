@@ -2,6 +2,7 @@ package system
 
 import (
 	"github.com/infinit-lab/yolanda/httpserver"
+	"github.com/infinit-lab/yolanda/logutils"
 	"net/http"
 )
 
@@ -14,6 +15,7 @@ type Version struct {
 var version Version
 
 func init() {
+	logutils.Trace("Initializing controller system...")
 	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/version", HandleGetVersion1, false)
 }
 

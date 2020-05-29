@@ -14,6 +14,7 @@ import (
 )
 
 func init() {
+	logutils.Trace("Initializing controller net...")
 	initNet()
 	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/net/interface", HandleGetNetInterfaceList1, true)
 	httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/net/interface/+", HandlePutNetInterface1, true)

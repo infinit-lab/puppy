@@ -10,6 +10,7 @@ import (
 )
 
 func init() {
+	logutils.Trace("Initializing controller log...")
 	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/operate-log", HandleGetOperateLogList1, true)
 	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/login-log", HandleGetLoginLogList1, true)
 }

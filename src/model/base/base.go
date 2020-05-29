@@ -35,6 +35,7 @@ const (
 	KeyProcessStatus int = 7
 	KeyStatistic     int = 8
 	KeyUpdate        int = 9
+	KeyLicenseStatus int = 10
 )
 
 const (
@@ -83,3 +84,23 @@ type Statistic struct {
 	Stopped int `json:"stopped"`
 	Disable int `json:"disable"`
 }
+
+const (
+	LicenseUnauthorized int = 0
+	LicenseAuthorized   int = 1
+	LicenseImporting    int = 2
+)
+
+const (
+	AuthUuid string = "uuid"
+	AuthForever string = "forever"
+	AuthDatetime  string = "datetime"
+	AuthDuration  string = "duration"
+)
+
+const (
+	ValueTypeInt      string = "int"
+	ValueTypeBool     string = "bool"
+	ValueTypeString   string = "string"
+	ValueTypeDatetime string = "datetime"
+)
