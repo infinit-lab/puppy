@@ -31,6 +31,53 @@ func FilePath() (string, error) {
 }
 
 func loadLicense() {
+	defer func() {
+		if l.Auth == nil {
+			l.Auth = make(map[string]license.Auth)
+		}
+		_, ok := l.Auth[base.AuthUuid]
+		if !ok {
+			a := license.Auth {
+				Type: base.AuthUuid,
+				ValueType: base.ValueTypeString,
+				Value: []string{""},
+				Current: "",
+			}
+			l.Auth[base.AuthUuid] = a
+		}
+		_, ok = l.Auth[base.AuthForever]
+		if !ok {
+			a := license.Auth {
+				Type: base.AuthForever,
+				ValueType: base.ValueTypeBool,
+				Value: []string{"false"},
+				Current: "false",
+			}
+			l.Auth[base.AuthForever] = a
+		}
+		_, ok = l.Auth[base.AuthDatetime]
+		if !ok {
+			now := time.Now().UTC().Format("2006-01-02 15:04:05")
+			a := license.Auth {
+				Type: base.AuthDatetime,
+				ValueType: base.ValueTypeDatetime,
+				Value: []string{now},
+				Current: now,
+			}
+			l.Auth[base.AuthDatetime] = a
+		}
+		_, ok = l.Auth[base.AuthDuration]
+		if !ok {
+			a := license.Auth {
+				Type: base.AuthDuration,
+				ValueType: base.ValueTypeInt,
+				Value: []string{"0"},
+				Current: "0",
+			}
+			l.Auth[base.AuthDuration] = a
+		}
+	}()
+	l.Auth = make(map[string]license.Auth)
 	path, err := FilePath()
 	if err != nil {
 		return
@@ -45,9 +92,7 @@ func loadLicense() {
 		logutils.Error("Failed to DecodeSelf. error: ", err)
 		return
 	}
-	logutils.Trace(string(data))
 
-	l.Auth = make(map[string]license.Auth)
 	err = json.Unmarshal(data, &l.Auth)
 	if err != nil {
 		logutils.Error("Failed to Unmarshal. error: ", err)
@@ -56,8 +101,11 @@ func loadLicense() {
 }
 
 func checkLicense() {
-	status := base.LicenseUnauthorized
-	defer license.SetLicenseStatus(status)
+	var status int
+	status = base.LicenseUnauthorized
+	defer func() {
+		license.SetLicenseStatus(status)
+	}()
 
 	isForever, err := checkForever()
 	if err != nil {
@@ -119,7 +167,7 @@ func checkInDatetime() (bool, error) {
 		logutils.Error("Failed to Parse. error: ", err)
 		return false, err
 	}
-	subTime := deadline.Sub(currentTime)
+	subTime := deadline.Sub(currentTime).Seconds()
 	if subTime <= 0 {
 		logutils.Error("End of trial!!!")
 		return false, nil
@@ -239,7 +287,7 @@ func getDatetimeDelta() (int, error) {
 		return 0, err
 	}
 	currentTime = currentTime.Add(time.Minute)
-	return int(deadline.Sub(currentTime)), nil
+	return int(deadline.Sub(currentTime).Seconds()), nil
 }
 
 func updateDatetime(delta int) {
@@ -252,9 +300,9 @@ func updateDatetime(delta int) {
 		logutils.Error("Datetime value is 0.")
 		return
 	}
-	now := time.Now().Local()
+	now := time.Now().UTC()
 	datetime.Current = now.Format("2006-01-02 15:04:05")
-	datetime.Value[0] = now.Add(time.Duration(delta)).Local().Format("2006-01-02 15:04:05")
+	datetime.Value[0] = now.Add(time.Duration(delta) * time.Second).UTC().Format("2006-01-02 15:04:05")
 	l.Auth[base.AuthDatetime] = datetime
 }
 
@@ -403,18 +451,19 @@ func calculateDuration(lic *license.License) (datetime license.Auth, duration li
 		return
 	}
 
-	now := time.Now().Local()
+	now := time.Now().UTC()
 	dt, err := time.Parse("2006-01-02 15:04:05", datetimeAuth.Value[0])
 	if err != nil {
 		logutils.Error("Failed to Parse. error: ", err)
 		return
 	}
 	dur, err := strconv.Atoi(durationAuth.Value[0])
+
 	if err != nil {
 		logutils.Error("Failed to Atoi. error: ", err)
 		return
 	}
-	delta := int(dt.Sub(now))
+	delta := int(dt.Sub(now).Seconds())
 	if delta > dur {
 		delta = dur
 	}
@@ -423,7 +472,7 @@ func calculateDuration(lic *license.License) (datetime license.Auth, duration li
 	}
 	datetime = datetimeAuth
 	datetime.Current = now.Format("2006-01-02 15:04:05")
-	datetime.Value[0] = now.Add(time.Duration(delta)).Local().Format("2006-01-02 15:04:05")
+	datetime.Value[0] = now.Add(time.Duration(delta) * time.Second).Format("2006-01-02 15:04:05")
 
 	duration = durationAuth
 	duration.Current = "0"

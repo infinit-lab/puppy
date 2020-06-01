@@ -6,6 +6,8 @@
 *.dylib
 *.sum
 *.db
+*.txt
+*.yaml
 
 # Test binary, built with `go test -c`
 *.test

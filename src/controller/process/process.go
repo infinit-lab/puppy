@@ -27,6 +27,7 @@ var m *manager
 var ph *processHandler
 var g *guard
 var s *slave
+var lh *licenseHandler
 
 type updateManager struct {
 	mutex   sync.Mutex
@@ -48,6 +49,9 @@ func init() {
 		ph.m = m
 		bus.Subscribe(base.KeyProcess, ph)
 		bus.Subscribe(base.KeyProcessStatus, ph)
+
+		lh = new(licenseHandler)
+		bus.Subscribe(base.KeyLicenseStatus, lh)
 
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process", HandleGetProcessList1, true)
 		httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/process/+", HandleGetProcess1, true)

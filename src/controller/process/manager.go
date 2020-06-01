@@ -364,3 +364,31 @@ func (h *processHandler) Handle(key int, value *bus.Resource) {
 		_ = bus.PublishResource(base.KeyStatistic, base.StatusUpdated, "", statistic, nil)
 	}
 }
+
+type licenseHandler struct {
+
+}
+
+func (h *licenseHandler) Handle(key int, value *bus.Resource) {
+	if key != base.KeyLicenseStatus {
+		return
+	}
+	status, ok := value.Data.(int)
+	if !ok {
+		return
+	}
+	logutils.Trace("License status is ", status)
+	if status == base.LicenseAuthorized {
+		for _, p := range m.processList {
+			if p.process.Enable && p.isStart == false {
+				_ = m.start(p)
+			}
+		}
+	} else if status == base.LicenseUnauthorized {
+		for _, p := range m.processList {
+			if p.isStart {
+				_ = m.stop(p)
+			}
+		}
+	}
+}
