@@ -70,3 +70,34 @@ func TestDeleteLocalServer(t *testing.T) {
 		t.Fatal("Should not get local server.")
 	}
 }
+
+func TestCreateRemoteHost(t *testing.T) {
+	r := RemoteHost {
+		Address: "127.0.0.1:7070",
+		Description: "Test Remote Host",
+	}
+	err := CreateRemoteHost(&r)
+	if err != nil {
+		t.Fatal("Failed to CreateRemoteHost. error: ", err)
+	}
+	rs, err := GetRemoteHostList()
+	if err != nil {
+		t.Fatal("Failed to GetRemoteHostList. error: ", err)
+	}
+	for _, r := range rs {
+		data, _ := json.Marshal(r)
+		logutils.Trace("Remote host is ", string(data))
+	}
+}
+
+func TestDeleteRemoteHost(t *testing.T) {
+	err := DeleteRemoteHost("127.0.0.1:7070")
+	if err != nil {
+		t.Fatal("Failed to DeleteRemoteHost. error: ", err)
+	}
+	rs, err := GetRemoteHostList()
+	for _, r := range rs {
+		data, _ := json.Marshal(r)
+		logutils.Trace("Remote host is ", string(data))
+	}
+}

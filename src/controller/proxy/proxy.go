@@ -4,14 +4,25 @@ import (
 	"github.com/infinit-lab/qiankun/common"
 	"github.com/infinit-lab/qiankun/kun"
 	"github.com/infinit-lab/taiji/src/model/proxy"
-	"github.com/infinit-lab/yolanda/config"
 	"github.com/infinit-lab/yolanda/httpserver"
 	"github.com/infinit-lab/yolanda/logutils"
 	"net/http"
-	"strings"
+	"net/url"
 )
 
 func init() {
+	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/proxy/local-server", HandleGetLocalServerList1, false)
+	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/proxy/local-server/+", HandleGetLocalServer1, false)
+	httpserver.RegisterHttpHandlerFunc(http.MethodPost, "/api/1/proxy/local-server", HandleCreateLocalServer1, false)
+	httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/proxy/local-server/+", HandleUpdateLocalServer1, false)
+	httpserver.RegisterHttpHandlerFunc(http.MethodDelete, "/api/1/proxy/local-server/+", HandleDeleteLocalServer1, false)
+
+	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/proxy/remote-host", HandleGetRemoteHostList1, false)
+	httpserver.RegisterHttpHandlerFunc(http.MethodPost, "/api/1/proxy/remote-host", HandleCreateRemoteHost1, false)
+	httpserver.RegisterHttpHandlerFunc(http.MethodDelete, "/api/1/proxy/remote-host", HandleDeleteRemoteHost1, false)
+}
+
+func Run() {
 	servers, err := proxy.GetLocalServerList()
 	if err == nil {
 		for _, server := range servers {
@@ -19,19 +30,15 @@ func init() {
 		}
 	}
 
-	hosts := strings.Split(config.GetString("kun.hosts"), ",")
-	for _, host := range hosts {
-		if host == "" {
-			continue
+	hosts, err := proxy.GetRemoteHostList()
+	if err == nil {
+		for _, host := range hosts {
+			if host.Address == "" {
+				continue
+			}
+			_ = kun.AddQian(host.Address)
 		}
-		_ = kun.AddQian(host)
 	}
-
-	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/proxy/local-server", HandleGetLocalServerList1, false)
-	httpserver.RegisterHttpHandlerFunc(http.MethodGet, "/api/1/proxy/local-server/+", HandleGetLocalServer1, false)
-	httpserver.RegisterHttpHandlerFunc(http.MethodPost, "/api/1/proxy/local-server", HandleCreateLocalServer1, false)
-	httpserver.RegisterHttpHandlerFunc(http.MethodPut, "/api/1/proxy/local-server/+", HandleUpdateLocalServer1, false)
-	httpserver.RegisterHttpHandlerFunc(http.MethodDelete, "/api/1/proxy/local-server/+", HandleDeleteLocalServer1, false)
 }
 
 type getLocalServerList1Response struct {
@@ -139,4 +146,61 @@ func HandleDeleteLocalServer1(w http.ResponseWriter, r *http.Request) {
 		Result: true,
 	}
 	httpserver.Response(w, response)
+}
+
+type getRemoteHostList1Response struct {
+	httpserver.ResponseBody
+	Data []*proxy.RemoteHost `json:"data"`
+}
+
+func HandleGetRemoteHostList1(w http.ResponseWriter, r *http.Request) {
+	var response getRemoteHostList1Response
+	var err error
+	response.Data, err = proxy.GetRemoteHostList()
+	if err != nil {
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	response.Result = true
+	httpserver.Response(w, response)
+}
+
+func HandleCreateRemoteHost1(w http.ResponseWriter, r *http.Request) {
+	var remote proxy.RemoteHost
+	err := httpserver.GetRequestBody(r, &remote)
+	if err != nil {
+		httpserver.ResponseError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = proxy.CreateRemoteHost(&remote)
+	if err != nil {
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	response := httpserver.ResponseBody{Result: true}
+	httpserver.Response(w, response)
+	_ = kun.AddQian(remote.Address)
+}
+
+func HandleDeleteRemoteHost1(w http.ResponseWriter, r *http.Request) {
+	forms, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		logutils.Error("Failed to ParseQuery. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	addresses, ok := forms["address"]
+	if !ok || len(addresses) == 0{
+		logutils.Error("Can't find address.")
+		httpserver.ResponseError(w, "无效地址", http.StatusBadRequest)
+		return
+	}
+	err = proxy.DeleteRemoteHost(addresses[0])
+	if err != nil {
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	response := httpserver.ResponseBody{Result:true}
+	httpserver.Response(w, response)
+	kun.DeleteQian(addresses[0])
 }

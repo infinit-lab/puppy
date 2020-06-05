@@ -10,6 +10,11 @@ import (
 )
 
 func init() {
+	initializeLocalServer()
+	initializeRemoteHost()
+}
+
+func initializeLocalServer() {
 	table := sqlite.Table {
 		Name: "local_server",
 		Columns: []sqlite.Column {
@@ -128,3 +133,75 @@ func DeleteLocalServer(uuid string) error {
 	}
 	return nil
 }
+
+func initializeRemoteHost() {
+	table := sqlite.Table {
+		Name: "remote_host",
+		Columns: []sqlite.Column {
+			{
+				Name: "address",
+				Type: "VARCHAR(256)",
+				Default: "",
+				Index: true,
+				Unique: true,
+			},
+			{
+				Name: "description",
+				Type: "VARCHAR(512)",
+				Default: "",
+			},
+		},
+	}
+	err := base.Sqlite.InitializeTable(table)
+	if err != nil {
+		logutils.Error("Failed to InitializeTable. error: ", err)
+		return
+	}
+}
+
+type RemoteHost struct {
+	Address string `json:"address"`
+	Description string `json:"description"`
+}
+
+func GetRemoteHostList() ([]*RemoteHost, error) {
+	rows, err := base.Sqlite.Query("SELECT `address`, `description` FROM `remote_host`")
+	if err != nil {
+		logutils.Error("Failed to Query. error: ", err)
+		return nil, err
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+	var remoteHostList []*RemoteHost
+	for rows.Next() {
+		r := new(RemoteHost)
+		err := rows.Scan(&r.Address, &r.Description)
+		if err != nil {
+			logutils.Error("Failed to Scan. error: ", err)
+			return nil, err
+		}
+		remoteHostList = append(remoteHostList, r)
+	}
+	return remoteHostList, nil
+}
+
+func CreateRemoteHost(r *RemoteHost) error {
+	_, err := base.Sqlite.Exec("INSERT INTO `remote_host` (`address`, `description`) VALUES (?, ?)",
+		r.Address, r.Description)
+	if err != nil {
+		logutils.Error("Failed to Exec. error: ", err)
+		return err
+	}
+	return nil
+}
+
+func DeleteRemoteHost(addr string) error {
+	_, err := base.Sqlite.Exec("DELETE FROM `remote_host` WHERE `address` = ?", addr)
+	if err != nil {
+		logutils.Error("Failed to Exec. error: ", err)
+		return err
+	}
+	return nil
+}
+

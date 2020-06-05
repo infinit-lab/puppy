@@ -8,7 +8,7 @@ import (
 	_ "github.com/infinit-lab/taiji/src/controller/notification"
 	_ "github.com/infinit-lab/taiji/src/controller/performance"
 	"github.com/infinit-lab/taiji/src/controller/process"
-	_ "github.com/infinit-lab/taiji/src/controller/proxy"
+	"github.com/infinit-lab/taiji/src/controller/proxy"
 	"github.com/infinit-lab/taiji/src/controller/system"
 	_ "github.com/infinit-lab/taiji/src/controller/token"
 	"github.com/infinit-lab/yolanda/config"
@@ -40,6 +40,7 @@ func main() {
 				BuildTime: BuildTime,
 			}
 			system.SetVersion(&v)
+			proxy.Run()
 			_ = httpserver.ListenAndServe()
 		}()
 	}
