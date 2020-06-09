@@ -11,7 +11,6 @@ import (
 var conn net.Conn
 
 type searchHandler struct {
-
 }
 
 func (h *searchHandler) onGetFrame(buffer []byte) {
@@ -66,5 +65,3 @@ func TestSearch(t *testing.T) {
 	}
 	sendWait(data)
 }
-
-

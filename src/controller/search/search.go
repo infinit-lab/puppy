@@ -31,10 +31,10 @@ type udpFrameHandler struct {
 }
 
 type udpClient struct {
-	cache   *cache
-	timer   *time.Timer
-	handler *udpFrameHandler
-	addr    *net.UDPAddr
+	cache      *cache
+	timer      *time.Timer
+	handler    *udpFrameHandler
+	addr       *net.UDPAddr
 	frameIndex uint16
 }
 
