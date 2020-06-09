@@ -26,7 +26,6 @@ func TestCacheByteToUint16(t *testing.T) {
 var buffer []byte
 
 type testFrameHandler struct {
-
 }
 
 func (h *testFrameHandler) onGetFrame(b []byte) {
@@ -44,7 +43,7 @@ func (h *testFrameHandler) onGetFrame(b []byte) {
 }
 
 func TestCachePackBuffer(t *testing.T) {
-	for i := 0; i < 0xFF * 3 + 20; i++ {
+	for i := 0; i < 0xFF*3+20; i++ {
 		buffer = append(buffer, byte(i))
 	}
 	frameList := packBuffer(buffer, 1)

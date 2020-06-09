@@ -8,13 +8,13 @@ import (
 )
 
 type cache struct {
-	buffer []byte
-	fh frameHandler
-	packages map[uint16]map[uint16][]byte
+	buffer          []byte
+	fh              frameHandler
+	packages        map[uint16]map[uint16][]byte
 	packagesTimeout map[uint16]int
-	packagesMutex sync.Mutex
-	ticker *time.Ticker
-	quitChan chan int
+	packagesMutex   sync.Mutex
+	ticker          *time.Ticker
+	quitChan        chan int
 }
 
 type frameHandler interface {
@@ -22,19 +22,19 @@ type frameHandler interface {
 }
 
 const (
-	frameHeadL byte = 0x00
-	frameHeadH byte = 0x01
-	frameCountL byte = 0x02
-	frameCountH byte = 0x03
+	frameHeadL         byte = 0x00
+	frameHeadH         byte = 0x01
+	frameCountL        byte = 0x02
+	frameCountH        byte = 0x03
 	framePackageIndexL byte = 0x04
 	framePackageIndexH byte = 0x05
-	frameIndexL byte = 0x06
-	frameIndexH byte = 0x07
-	frameDataLength byte = 0x08
-	frameData byte = 0x09
+	frameIndexL        byte = 0x06
+	frameIndexH        byte = 0x07
+	frameDataLength    byte = 0x08
+	frameData          byte = 0x09
 
 	frameSingleDataLength byte = 0x04
-	frameSingleData byte = 0x05
+	frameSingleData       byte = 0x05
 )
 
 func newCache(fh frameHandler) *cache {
@@ -48,7 +48,7 @@ func newCache(fh frameHandler) *cache {
 		for {
 			isQuit := false
 			select {
-			case <- c.ticker.C:
+			case <-c.ticker.C:
 				c.packagesMutex.Lock()
 				for key, value := range c.packagesTimeout {
 					if value > 30 {
@@ -58,7 +58,7 @@ func newCache(fh frameHandler) *cache {
 					c.packagesTimeout[key] = value + 1
 				}
 				c.packagesMutex.Unlock()
-			case <- c.quitChan:
+			case <-c.quitChan:
 				logutils.Trace("quitChan")
 				isQuit = true
 			}
@@ -92,8 +92,8 @@ func (c *cache) findHead() bool {
 	index := 0
 	for i, b := range c.buffer {
 		if b == 0xAA {
-			if i + 1 < len(c.buffer) {
-				if c.buffer[i + 1] == 0xAA {
+			if i+1 < len(c.buffer) {
+				if c.buffer[i+1] == 0xAA {
 					isFind = true
 					index = i
 					break
@@ -114,7 +114,7 @@ func (c *cache) findHead() bool {
 }
 
 func byteToUint16(low, high byte) uint16 {
-	return uint16(low) + uint16(high) << 8
+	return uint16(low) + uint16(high)<<8
 }
 
 func (c *cache) parseFrame() ([]byte, error) {
@@ -132,11 +132,11 @@ func (c *cache) parseFrame() ([]byte, error) {
 		return nil, errors.New("buffer size is not enough")
 	}
 	dataLength := int(c.buffer[dataLengthIndex])
-	if len(c.buffer) - dataLengthIndex + 1 < dataLength {
+	if len(c.buffer)-dataLengthIndex+1 < dataLength {
 		return nil, errors.New("buffer size is not enough")
 	}
-	frame := c.buffer[0:dataLengthIndex + 1 + dataLength]
-	c.buffer = c.buffer[dataLengthIndex + 1 + dataLength:]
+	frame := c.buffer[0 : dataLengthIndex+1+dataLength]
+	c.buffer = c.buffer[dataLengthIndex+1+dataLength:]
 	return frame, nil
 }
 
@@ -190,7 +190,7 @@ func (c *cache) unpackFrame(frame []byte) {
 func uint16ToByte(i uint16) []byte {
 	var bytes []byte
 	bytes = append(bytes, byte(i))
-	bytes = append(bytes, byte(i >> 8))
+	bytes = append(bytes, byte(i>>8))
 	return bytes
 }
 
@@ -204,15 +204,15 @@ func packBuffer(buffer []byte, index uint16) [][]byte {
 		frameList = append(frameList, frame)
 	} else {
 		times := size / 0xFF
-		if size % 0xFF > 0 {
+		if size%0xFF > 0 {
 			times++
 		}
 		for i := 0; i < times; i++ {
 			var temp []byte
-			if i == times - 1 {
-				temp = append(temp, buffer[i * 0xFF:]...)
+			if i == times-1 {
+				temp = append(temp, buffer[i*0xFF:]...)
 			} else {
-				temp = append(temp, buffer[i * 0xFF: (i + 1) * 0xFF]...)
+				temp = append(temp, buffer[i*0xFF:(i+1)*0xFF]...)
 			}
 			var frame []byte
 			frame = append(frame, 0xAA, 0xAA)
@@ -226,4 +226,3 @@ func packBuffer(buffer []byte, index uint16) [][]byte {
 	}
 	return frameList
 }
-
