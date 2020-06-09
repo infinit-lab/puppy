@@ -40,3 +40,7 @@ func HandleGetVersion1(w http.ResponseWriter, r *http.Request) {
 func SetVersion(v *Version) {
 	version = *v
 }
+
+func GetVersion() Version {
+	return version
+}

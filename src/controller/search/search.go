@@ -1,8 +1,6 @@
 package search
 
 import (
-	"encoding/json"
-	"errors"
 	"github.com/infinit-lab/yolanda/config"
 	"github.com/infinit-lab/yolanda/logutils"
 	"net"
@@ -11,13 +9,21 @@ import (
 )
 
 type Request struct {
-	Type string `json:"type"`
+	Command string `json:"command"`
+	Session int `json:"session"`
 }
 
 type Response struct {
+	Request
 	Result bool `json:"result"`
 	Error string `json:"error"`
-	Data interface{} `json:"data"`
+}
+
+type udpFrameHandler struct {
+
+}
+
+type udpServer struct {
 }
 
 func init() {
@@ -59,34 +65,11 @@ func init() {
 				logutils.Error("Failed to ReadFromUDP")
 				break
 			}
-			logutils.Trace("ReadFromUDP. ", string(data[:count]))
-			var rsp Response
-			rsp.Data, err = request(data[:count], rAddr)
-			if err != nil {
-				rsp.Result = false
-				rsp.Error = err.Error()
-			} else {
-				rsp.Result = true
-			}
-			buffer, err := json.Marshal(&rsp)
-			if err == nil {
-				_, err := conn.WriteToUDP(buffer, rAddr)
-				if err != nil {
-					logutils.Error("Failed to WriteToUDP. error: ", err)
-					break
-				}
-			}
+			logutils.Trace("ReadFromUDP. ", string(data[:count]), string(rAddr.IP))
 		}
 	}()
 }
 
-func request(data []byte, rAddr *net.UDPAddr) (interface{}, error) {
-	var req Request
-	if err := json.Unmarshal(data, &req); err != nil {
-		return nil, err
-	}
-	switch req.Type {
-	default:
-		return nil, errors.New("Unknown request type: " + req.Type)
-	}
+func (h *udpFrameHandler) onGetFrame(buffer []byte) {
+
 }
