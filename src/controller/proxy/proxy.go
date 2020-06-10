@@ -202,5 +202,5 @@ func HandleDeleteRemoteHost1(w http.ResponseWriter, r *http.Request) {
 	}
 	response := httpserver.ResponseBody{Result:true}
 	httpserver.Response(w, response)
-	kun.DeleteQian(addresses[0])
+	go kun.DeleteQian(addresses[0])
 }
