@@ -13,7 +13,6 @@
 | 包序号H | 1 | 当包总数大于1时， 才有该字段， 用于表示包为一帧数据 |
 | 数据长度 | 1 | |
 | 数据 | 数据长度-1 | |
-| CRC | 1 | CRC8 |
 
 ## 应用协议
 
@@ -37,11 +36,17 @@
   "result": "bool",
   "error": "string",
   "data": {
-    "fingerprint": "string",
     "version": {
       "version": "string",
       "commitId": "string",
       "buildTime": "string"
+    },
+    "license": {
+      "fingerprint": "string",
+      "status": "int",
+      "isForever": "bool",
+      "ValidDatetime": "string",
+      "ValidDuration": "int"
     }
   }
 }

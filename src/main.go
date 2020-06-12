@@ -9,6 +9,7 @@ import (
 	_ "github.com/infinit-lab/taiji/src/controller/performance"
 	"github.com/infinit-lab/taiji/src/controller/process"
 	"github.com/infinit-lab/taiji/src/controller/proxy"
+	_ "github.com/infinit-lab/taiji/src/controller/search"
 	"github.com/infinit-lab/taiji/src/controller/system"
 	_ "github.com/infinit-lab/taiji/src/controller/token"
 	"github.com/infinit-lab/yolanda/config"

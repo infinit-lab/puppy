@@ -3,6 +3,7 @@ package search
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/infinit-lab/taiji/src/controller/license"
 	n "github.com/infinit-lab/taiji/src/controller/net"
 	"github.com/infinit-lab/taiji/src/controller/system"
 	"github.com/infinit-lab/yolanda/config"
@@ -130,8 +131,8 @@ func init() {
 type searchResponse struct {
 	Response
 	Data struct {
-		FingerPrint string `json:"fingerprint"`
-		Version     system.Version
+		Version system.Version  `json:"version"`
+		License license.License `json:"license"`
 	} `json:"data"`
 }
 
@@ -157,7 +158,7 @@ func (h *udpFrameHandler) onGetFrame(buffer []byte) {
 		var response searchResponse
 		response.Request = request
 		var err error
-		response.Data.FingerPrint, err = utils.GetMachineFingerprint()
+		response.Data.License, err = license.GetLicense()
 		if err != nil {
 			logutils.Error("Failed to GetMachineFingerprint. error: ", err)
 			h.responseError(request, err.Error())
@@ -220,11 +221,14 @@ func (h *udpFrameHandler) response(response interface{}) {
 		logutils.Error("Failed to Marshal. error: ", err)
 		return
 	}
+	logutils.Trace(string(data))
 	client := server.getClientByHandler(h)
 	if client == nil {
 		logutils.Error("Failed to getAddrByHandler")
 		return
 	}
+	logutils.Trace(client.addr.IP.String())
+	logutils.Trace(client.addr.Port)
 	client.frameIndex++
 	frameList := packBuffer(data, client.frameIndex)
 	for _, frame := range frameList {

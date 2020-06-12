@@ -42,27 +42,28 @@ func HandleGetFingerprint1(w http.ResponseWriter, r *http.Request) {
 	httpserver.Response(w, response)
 }
 
-type getLicense1Response struct {
-	httpserver.ResponseBody
-	Data struct {
-		Status        int    `json:"status"`
-		Fingerprint   string `json:"fingerprint"`
-		IsForever     bool   `json:"isForever"`
-		ValidDatetime string `json:"valueDatetime"`
-		ValidDuration int    `json:"validDuration"`
-	} `json:"data"`
+type License struct {
+	Status        int    `json:"status"`
+	Fingerprint   string `json:"fingerprint"`
+	IsForever     bool   `json:"isForever"`
+	ValidDatetime string `json:"validDatetime"`
+	ValidDuration int    `json:"validDuration"`
 }
 
-func HandleGetLicense1(w http.ResponseWriter, r *http.Request) {
-	var response getLicense1Response
+type getLicense1Response struct {
+	httpserver.ResponseBody
+	Data License `json:"data"`
+}
+
+func GetLicense() (License, error) {
+	var lic License
 	var err error
-	response.Data.Fingerprint, err = utils.GetMachineFingerprint()
+	lic.Fingerprint, err = utils.GetMachineFingerprint()
 	if err != nil {
 		logutils.Error("Failed to GetMachineFingerprint. error: ", err)
-		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
-		return
+		return lic, err
 	}
-	response.Data.Status = license.GetLicenseStatus()
+	lic.Status = license.GetLicenseStatus()
 	auth := l.Auth
 	for key, value := range auth {
 		if len(value.Value) == 0 {
@@ -70,31 +71,39 @@ func HandleGetLicense1(w http.ResponseWriter, r *http.Request) {
 		}
 		switch key {
 		case base.AuthForever:
-			response.Data.IsForever, err = strconv.ParseBool(value.Value[0])
+			lic.IsForever, err = strconv.ParseBool(value.Value[0])
 			if err != nil {
 				logutils.Error("Failed to ParseBool. error: ", err)
-				httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
-				return
+				return lic, err
 			}
 		case base.AuthDatetime:
-			response.Data.ValidDatetime = value.Value[0]
+			lic.ValidDatetime = value.Value[0]
 		case base.AuthDuration:
 			d, err := strconv.Atoi(value.Value[0])
 			if err != nil {
 				logutils.Error("Failed to Atoi. error: ", err)
-				httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
-				return
+				return lic, err
 			}
 			c, err := strconv.Atoi(value.Current)
 			if err != nil {
 				logutils.Error("Failed to Atoi. error: ", err)
-				httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
-				return
+				return lic, err
 			}
-			response.Data.ValidDuration = d - c
+			lic.ValidDuration = d - c
 		}
 	}
+	return lic, err
+}
 
+func HandleGetLicense1(w http.ResponseWriter, r *http.Request) {
+	var response getLicense1Response
+	var err error
+	response.Data, err = GetLicense()
+	if err != nil {
+		logutils.Error("Failed to getLicense. error: ", err)
+		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	response.Result = true
 	httpserver.Response(w, response)
 }
