@@ -101,14 +101,18 @@ func GetAddressList() ([]*Address, error) {
 }
 
 func UpdateAddress(a *Address) error {
-	_, err := GetAddress(a.Name)
+	temp, err := GetAddress(a.Name)
 	var sqlString string
 	if err != nil {
 		sqlString = "INSERT INTO `net` (`name`, `ip`, `mask`, `gateway`) VALUES (?, ?, ?, ?)"
 	} else {
 		sqlString = "UPDATE `net` SET `name` = ?, `ip` = ?, `mask` = ?, `gateway` = ? WHERE `id` = " +
-			strconv.Itoa(a.Id)
+			strconv.Itoa(temp.Id)
 	}
+	logutils.Trace(sqlString)
+	logutils.Trace(a.Ip)
+	logutils.Trace(a.Mask)
+	logutils.Trace(a.Gateway)
 	_, err = base.Sqlite.Exec(sqlString, a.Name, a.Ip, a.Mask, a.Gateway)
 	if err != nil {
 		logutils.Error("Failed to Exec. error: ", err)

@@ -59,7 +59,9 @@
 ```json5
 {
   "command": "net_list",
-  "session": "int"
+  "session": "int",
+  "username": "string",
+  "password": "string"
 }
 ```
 
@@ -91,11 +93,13 @@
 {
   "command": "set_net",
   "session": "int",
+  "username": "string",
+  "password": "string",
   "data": {
     "name": "string",
     "ip": "string",
     "mask": "string",
-    "gateway": "string"
+    "gateway": "string",
   }
 }
 ```

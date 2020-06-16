@@ -40,10 +40,18 @@ func HandleGetNetInterfaceList1(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetAdapter(adapter *utils.Adapter) error {
-	if net.ParseIP(adapter.Ip) == nil || net.ParseIP(adapter.Mask) == nil ||
-		net.ParseIP(adapter.Gateway) == nil {
-		logutils.Error("Failed to ParseIP")
-		return errors.New("IP, 子网掩码或网关格式错误")
+	var ip, mask, gateway net.IP
+	if ip = net.ParseIP(adapter.Ip); ip == nil {
+		logutils.Error("Failed to ParseIP.")
+		return errors.New("IP格式错误")
+	}
+	if mask = net.ParseIP(adapter.Mask); mask == nil {
+		logutils.Error("Failed to ParseMask.")
+		return errors.New("子网掩码格式错误")
+	}
+	if gateway = net.ParseIP(adapter.Gateway); gateway == nil {
+		logutils.Error("Failed to ParseGateway. ")
+		return errors.New("网关格式错误")
 	}
 
 	addr := n.Address{

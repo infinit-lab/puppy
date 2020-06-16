@@ -6,6 +6,7 @@ import (
 	"github.com/infinit-lab/taiji/src/controller/license"
 	n "github.com/infinit-lab/taiji/src/controller/net"
 	"github.com/infinit-lab/taiji/src/controller/system"
+	"github.com/infinit-lab/taiji/src/model/account"
 	"github.com/infinit-lab/yolanda/config"
 	"github.com/infinit-lab/yolanda/logutils"
 	"github.com/infinit-lab/yolanda/utils"
@@ -19,6 +20,12 @@ import (
 type Request struct {
 	Command string `json:"command"`
 	Session int    `json:"session"`
+}
+
+type AuthRequest struct {
+	Request
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type Response struct {
@@ -146,6 +153,20 @@ type setNetRequest struct {
 	Data utils.Adapter `json:"data"`
 }
 
+func checkAccount(buffer []byte) (bool, error) {
+	var user AuthRequest
+	err := json.Unmarshal(buffer, &user)
+	if err != nil {
+		logutils.Error("Failed to Unmarshal. error: ", err)
+		return false, err
+	}
+	isValid, err := account.IsValidAccount(user.Username, user.Password)
+	if err != nil {
+		return false, err
+	}
+	return isValid, nil
+}
+
 func (h *udpFrameHandler) onGetFrame(buffer []byte) {
 	var request Request
 	err := json.Unmarshal(buffer, &request)
@@ -168,9 +189,17 @@ func (h *udpFrameHandler) onGetFrame(buffer []byte) {
 		response.Result = true
 		h.response(response)
 	case cmdNetList:
+		isValid, err := checkAccount(buffer)
+		if err != nil {
+			h.responseError(request, err.Error())
+			return
+		}
+		if !isValid {
+			h.responseError(request, "无效用户名或密码")
+			return
+		}
 		var response netListResponse
 		response.Request = request
-		var err error
 		response.Data, err = utils.GetNetworkInfo()
 		if err != nil {
 			logutils.Error("Failed to GetNetworkInfo. error: ", err)
@@ -180,8 +209,23 @@ func (h *udpFrameHandler) onGetFrame(buffer []byte) {
 		response.Result = true
 		h.response(response)
 	case cmdSetNet:
+		isValid, err := checkAccount(buffer)
+		if err != nil {
+			h.responseError(request, err.Error())
+			return
+		}
+		if !isValid {
+			h.responseError(request, "无效用户名或密码")
+			return
+		}
 		var req setNetRequest
-		err := n.SetAdapter(&req.Data)
+		err = json.Unmarshal(buffer, &req)
+		if err != nil {
+			logutils.Error("Failed to Unmarshal. error: ", err)
+			h.responseError(request, err.Error())
+			return
+		}
+		err = n.SetAdapter(&req.Data)
 		if err != nil {
 			logutils.Error("Failed to SetAdapter. error: ", err)
 			h.responseError(request, err.Error())
