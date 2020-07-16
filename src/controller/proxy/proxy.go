@@ -150,17 +150,12 @@ func HandleDeleteLocalServer1(w http.ResponseWriter, r *http.Request) {
 
 type getRemoteHostList1Response struct {
 	httpserver.ResponseBody
-	Data []*proxy.RemoteHost `json:"data"`
+	Data []kun.QianInfo `json:"data"`
 }
 
 func HandleGetRemoteHostList1(w http.ResponseWriter, r *http.Request) {
 	var response getRemoteHostList1Response
-	var err error
-	response.Data, err = proxy.GetRemoteHostList()
-	if err != nil {
-		httpserver.ResponseError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	response.Data = kun.GetQianList()
 	response.Result = true
 	httpserver.Response(w, response)
 }

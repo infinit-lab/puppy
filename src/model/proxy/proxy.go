@@ -40,6 +40,16 @@ func initializeLocalServer() {
 				Type: "VARCHAR(256)",
 				Default: "",
 			},
+			{
+				Name: "type",
+				Type: "VARCHAR(256)",
+				Default: "",
+			},
+			{
+				Name: "isPublic",
+				Type: "TINYINT",
+				Default: "1",
+			},
 		},
 	}
 	err := base.Sqlite.InitializeTable(table)
@@ -50,12 +60,12 @@ func initializeLocalServer() {
 }
 
 const (
-	selectLocalServer string = "SELECT `uuid`, `host`, `port`, `description` FROM `local_server` "
+	selectLocalServer string = "SELECT `uuid`, `host`, `port`, `description`, `type`, `isPublic` FROM `local_server` "
 )
 
 func scanLocalServer(rows *sql.Rows) (*common.Server, error) {
 	s := new(common.Server)
-	err := rows.Scan(&s.Uuid, &s.Host, &s.Port, &s.Description)
+	err := rows.Scan(&s.Uuid, &s.Host, &s.Port, &s.Description, &s.Type, &s.IsPublic)
 	if err != nil {
 		logutils.Error("Failed to Scan. error: ", err)
 		return nil, err
@@ -106,8 +116,8 @@ func GetLocalServer(uuid string) (*common.Server, error) {
 }
 
 func CreateLocalServer(s *common.Server) error {
-	_, err := base.Sqlite.Exec("INSERT INTO `local_server` (`uuid`, `host`, `port`, `description`) " +
-		"VALUES (?, ?, ?, ?)", s.Uuid, s.Host, s.Port, s.Description)
+	_, err := base.Sqlite.Exec("INSERT INTO `local_server` (`uuid`, `host`, `port`, `description`, `type`, `isPublic`) " +
+		"VALUES (?, ?, ?, ?, ?, ?)", s.Uuid, s.Host, s.Port, s.Description, s.Type, s.IsPublic)
 	if err != nil {
 		logutils.Error("Failed to Exec. error: ", err)
 		return err
